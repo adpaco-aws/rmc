@@ -60,7 +60,7 @@ jobs:
         run: ./scripts/setup/install_dashboard_deps.sh
 
       - name: Generate RMC dashboard
-        if: ${{ matrix.os == 'ubuntu-20.04' && github.event_name == 'push' && startsWith('refs/heads/main', github.ref) }}
+        # if: ${{ matrix.os == 'ubuntu-20.04' && github.event_name == 'push' && startsWith('refs/heads/main', github.ref) }}
         run: ./x.py run -i --stage 1 dashboard
 
       # On one OS only, build the documentation, too.
