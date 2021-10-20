@@ -188,6 +188,8 @@ pub fn add_codegen_job(litani: &mut Litani, test_props: &TestProps) {
         .args([
             "-Z",
             "codegen-backend=gotoc",
+            "-Z",
+            "trim-diagnostic-paths=no",
             "--cfg=rmc",
             "--out-dir",
             "build/tmp",
