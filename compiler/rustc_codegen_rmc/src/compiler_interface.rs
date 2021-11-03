@@ -168,7 +168,7 @@ impl CodegenBackend for GotocCodegenBackend {
             debug!("output to {:?}", symtab_filename);
             let out_file = ::std::fs::File::create(&symtab_filename).unwrap();
             let writer = BufWriter::new(out_file);
-            serde_json::to_writer(writer, &result.symtab);
+            serde_json::to_writer_pretty(writer, &result.symtab);
 
             // write!(out_file, "{}", result.symtab.to_irep().to_json().pretty().to_string()).unwrap();
 

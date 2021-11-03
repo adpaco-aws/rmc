@@ -7,10 +7,12 @@ use serde::Serialize;
 /// Based off the CBMC symbol implementation here:
 /// https://github.com/diffblue/cbmc/blob/develop/src/util/symbol.h
 #[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Symbol {
     /// Unique identifier. Mangled name from compiler `foo12_bar17_x@1`
     pub name: String,
     pub location: Location,
+    #[serde(rename = "type")]
     pub typ: Type,
     pub value: SymbolValues,
 

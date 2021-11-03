@@ -1,10 +1,12 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+use crate::irep::to_irep::ToIrep;
 use self::DatatypeComponent::*;
 use self::Type::*;
 use super::super::utils::{aggr_name, max_int, min_int};
 use super::super::MachineModel;
 use super::{Expr, SymbolTable};
+use serde::ser::{SerializeMap, Serializer};
 use serde::Serialize;
 use std::collections::BTreeMap;
 use std::convert::TryInto;
@@ -19,7 +21,7 @@ use std::fmt::Debug;
 /// In the examples below, `x` is used as a placeholder showing how the a variable of that
 /// type would be declared. In general, these types map directly to C types; when they do not,
 /// the comment notes this.
-#[derive(PartialEq, Debug, Clone, Serialize)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Type {
     /// `typ x[size]`. E.g. `unsigned int x[3]`
     Array { typ: Box<Type>, size: u64 },
@@ -68,6 +70,15 @@ pub enum Type {
     /// In CBMC/gcc, variables of this type are declared as:
     /// `typ __attribute__((vector_size (size * sizeof(typ)))) var;`
     Vector { typ: Box<Type>, size: u64 },
+}
+
+impl Serialize for Type {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.to_irep(mm).to_string().serialize(serializer)
+    }
 }
 
 /// Machine dependent integers: `bool`, `char`, `int`, `size_t`, etc.

@@ -8,6 +8,7 @@ use std::collections::BTreeMap;
 /// https://github.com/diffblue/cbmc/blob/develop/src/util/symbol_table.h
 /// Since the field is kept private, with only immutable references handed out, elements can only
 #[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SymbolTable {
     symbol_table: BTreeMap<String, Symbol>,
     machine_model: MachineModel,
