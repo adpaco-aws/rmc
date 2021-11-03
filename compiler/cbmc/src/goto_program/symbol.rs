@@ -3,9 +3,10 @@
 use super::super::utils::aggr_name;
 use super::{DatatypeComponent, Expr, Location, Parameter, Stmt, Type};
 
+use serde::Serialize;
 /// Based off the CBMC symbol implementation here:
 /// https://github.com/diffblue/cbmc/blob/develop/src/util/symbol.h
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Symbol {
     /// Unique identifier. Mangled name from compiler `foo12_bar17_x@1`
     pub name: String,
@@ -45,13 +46,13 @@ pub struct Symbol {
 
 /// Currently, only C is understood by CBMC.
 // TODO: https://github.com/model-checking/rmc/issues/1
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub enum SymbolModes {
     C,
     Rust,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub enum SymbolValues {
     Expr(Expr),
     Stmt(Stmt),

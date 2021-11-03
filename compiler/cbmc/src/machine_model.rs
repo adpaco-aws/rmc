@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 /// Represents the machine specific information necessary to generate an Irep.
 use num::bigint::BigInt;
-#[derive(Clone, Debug)]
+use serde::Serialize;
+
+#[derive(Clone, Debug, Serialize)]
 pub struct MachineModel {
     /// Is the architecture big endian?
     /// Minimum architectural alignment, in bytes
@@ -32,7 +34,7 @@ pub struct MachineModel {
 }
 /// The different rounding modes supported by cbmc.
 /// https://github.com/diffblue/cbmc/blob/2bc93c24ea6c09b5fc99b31df682ec5b31c4b162/src/ansi-c/library/fenv.c#L7
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize)]
 pub enum RoundingMode {
     ToNearest = 0,
     Downward = 1,

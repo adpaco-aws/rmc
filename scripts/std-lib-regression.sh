@@ -43,7 +43,7 @@ echo "Starting cargo build with RMC"
 export RUSTC_LOG=error
 export RUSTFLAGS=$(${SCRIPT_DIR}/rmc-rustc --rmc-flags)
 export RUSTC=$(${SCRIPT_DIR}/rmc-rustc --rmc-path)
-cargo +nightly build -Z build-std --target $TARGET 2>&1 \
+/usr/bin/time -v cargo +nightly build -Z build-std --target $TARGET 2>&1 \
   | tee $STD_LIB_LOG
 
 # For now, we expect a linker error, but no modules should fail with a compiler

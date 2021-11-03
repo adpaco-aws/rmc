@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 use self::StmtBody::*;
 use super::{BuiltinFn, Expr, Location};
+use serde::Serialize;
 use std::fmt::Debug;
 use tracing::debug;
 
@@ -24,7 +25,7 @@ use tracing::debug;
 /// TODO:
 /// The CBMC irep resentation uses sharing to reduce the in-memory size of expressions.
 /// This is not currently implemented for these expressions, but would be possible given a factory.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Stmt {
     body: Box<StmtBody>,
     location: Location,
@@ -32,7 +33,7 @@ pub struct Stmt {
 /// The different kinds of bodies a statement can have.
 /// The names are chosen to map directly onto the IrepID used by CBMC.
 /// Each statement is described by reference to the corresponding C code that would generate it.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub enum StmtBody {
     /// `lhs = rhs;`
     Assign {
@@ -101,7 +102,7 @@ pub enum StmtBody {
     },
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct SwitchCase {
     case: Expr,
     body: Stmt,

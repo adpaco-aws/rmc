@@ -5,6 +5,7 @@ use self::Type::*;
 use super::super::utils::{aggr_name, max_int, min_int};
 use super::super::MachineModel;
 use super::{Expr, SymbolTable};
+use serde::Serialize;
 use std::collections::BTreeMap;
 use std::convert::TryInto;
 use std::fmt::Debug;
@@ -18,7 +19,7 @@ use std::fmt::Debug;
 /// In the examples below, `x` is used as a placeholder showing how the a variable of that
 /// type would be declared. In general, these types map directly to C types; when they do not,
 /// the comment notes this.
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Serialize)]
 pub enum Type {
     /// `typ x[size]`. E.g. `unsigned int x[3]`
     Array { typ: Box<Type>, size: u64 },
@@ -70,7 +71,7 @@ pub enum Type {
 }
 
 /// Machine dependent integers: `bool`, `char`, `int`, `size_t`, etc.
-#[derive(PartialEq, Debug, Clone, Copy)]
+#[derive(PartialEq, Debug, Clone, Copy, Serialize)]
 pub enum CIntType {
     /// `bool`
     Bool,
@@ -85,14 +86,14 @@ pub enum CIntType {
 }
 
 /// The fields types of a struct or union
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Serialize)]
 pub enum DatatypeComponent {
     Field { name: String, typ: Type },
     Padding { name: String, bits: u64 },
 }
 
 /// The formal parameters of a function.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Parameter {
     typ: Type,
     /// The unique identifier that refers to this symbol (qualified by function name, module, etc)

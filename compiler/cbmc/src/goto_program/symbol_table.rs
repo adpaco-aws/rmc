@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 use super::super::{env, MachineModel};
 use super::{BuiltinFn, DatatypeComponent, Stmt, Symbol, Type};
+use serde::Serialize;
 use std::collections::BTreeMap;
 /// This is a typesafe implementation of the CBMC symbol table, based on the CBMC code at:
 /// https://github.com/diffblue/cbmc/blob/develop/src/util/symbol_table.h
 /// Since the field is kept private, with only immutable references handed out, elements can only
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct SymbolTable {
     symbol_table: BTreeMap<String, Symbol>,
     machine_model: MachineModel,

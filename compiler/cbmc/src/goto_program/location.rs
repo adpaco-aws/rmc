@@ -1,11 +1,12 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0 OR MIT
+use serde::Serialize;
 use std::convert::TryInto;
 use std::fmt::Debug;
 
 /// A `Location` represents a source location.
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub enum Location {
     /// Unknown source location
     None,

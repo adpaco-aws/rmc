@@ -20,7 +20,9 @@ use rustc_serialize::json::ToJson;
 use rustc_session::config::{OutputFilenames, OutputType};
 use rustc_session::cstore::MetadataLoaderDyn;
 use rustc_session::Session;
+use serde_json::to_writer;
 use std::collections::BTreeMap;
+use std::io::BufWriter;
 use std::iter::FromIterator;
 use std::path::PathBuf;
 use tracing::{debug, warn};
@@ -165,7 +167,10 @@ impl CodegenBackend for GotocCodegenBackend {
             let symtab_filename = base_filename.with_extension("symtab.json");
             debug!("output to {:?}", symtab_filename);
             let mut out_file = ::std::fs::File::create(&symtab_filename).unwrap();
-            write!(out_file, "{}", result.symtab.to_irep().to_json().pretty().to_string()).unwrap();
+            let writer = BufWriter::new(out_file);
+            serde_json::to_writer(writer, &result.symtab);
+
+            // write!(out_file, "{}", result.symtab.to_irep().to_json().pretty().to_string()).unwrap();
 
             let type_map_filename = base_filename.with_extension("type_map.json");
             debug!("type_map to {:?}", type_map_filename);

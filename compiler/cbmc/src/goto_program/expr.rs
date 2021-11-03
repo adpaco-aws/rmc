@@ -6,6 +6,7 @@ use self::UnaryOperand::*;
 use super::super::MachineModel;
 use super::{DatatypeComponent, Location, Parameter, Stmt, SwitchCase, SymbolTable, Type};
 use num::bigint::BigInt;
+use serde::Serialize;
 use std::collections::BTreeMap;
 use std::fmt::Debug;
 
@@ -31,7 +32,7 @@ use std::fmt::Debug;
 /// TODO:
 /// The CBMC irep resentation uses sharing to reduce the in-memory size of expressions.
 /// This is not currently implemented for these expressions, but would be possible given a factory.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Expr {
     value: Box<ExprValue>,
     typ: Type,
@@ -43,7 +44,7 @@ pub struct Expr {
 /// Each expression is described by reference to the corresponding C code that would generate it.
 /// When an expression makes most sense in a broader statement context,
 /// the characters >>> e <<< are used to mark the part described by the enum.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub enum ExprValue {
     /// `&self`
     AddressOf(Expr),
@@ -153,7 +154,7 @@ pub enum ExprValue {
 }
 
 /// Binary operators. The names are the same as in the Irep representation.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize)]
 pub enum BinaryOperand {
     And,
     Ashr,
@@ -186,7 +187,7 @@ pub enum BinaryOperand {
 }
 
 // Unary operators with side-effects
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize)]
 pub enum SelfOperand {
     /// `self--`
     Postdecrement,
@@ -198,7 +199,7 @@ pub enum SelfOperand {
     Preincrement,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize)]
 pub enum UnaryOperand {
     /// `~self`
     Bitnot,
