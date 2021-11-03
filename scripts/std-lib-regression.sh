@@ -27,9 +27,12 @@ echo "Starting RMC codegen for the Rust standard library..."
 echo
 
 cd /tmp
-if [ -d StdLibTest ]; then rm -rf StdLibTest; fi
-cargo new StdLibTest
-cd StdLibTest
+if [ -d std_lib_test ]
+then
+    rm -rf std_lib_test
+fi
+cargo new std_lib_test --lib
+cd std_lib_test
 
 # Check that we have the nighly toolchain, which is required for -Z build-std
 if ! rustup toolchain list | grep -q nightly; then
@@ -43,7 +46,7 @@ echo "Starting cargo build with RMC"
 export RUSTC_LOG=error
 export RUSTFLAGS=$(${SCRIPT_DIR}/rmc-rustc --rmc-flags)
 export RUSTC=$(${SCRIPT_DIR}/rmc-rustc --rmc-path)
-/usr/bin/time -v cargo +nightly build -Z build-std --target $TARGET 2>&1 \
+/usr/bin/time -v cargo +nightly build -Z build-std --lib --target $TARGET 2>&1 \
   | tee $STD_LIB_LOG
 
 # For now, we expect a linker error, but no modules should fail with a compiler
