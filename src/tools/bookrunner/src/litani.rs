@@ -239,7 +239,7 @@ impl Litani {
         self.spawned_commands.clear();
         // Run `run-build` command and wait for it to finish.
         Command::new("litani")
-            .args(["run-build", "--no-pipeline-dep-graph"])
+            .args(["run-build", "-j4", "--no-pipeline-dep-graph"])
             .spawn()
             .unwrap()
             .wait()
