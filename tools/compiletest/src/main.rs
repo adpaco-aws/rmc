@@ -31,6 +31,7 @@ pub mod header;
 mod json;
 mod raise_fd_limit;
 mod read2;
+mod report;
 pub mod runtest;
 pub mod util;
 

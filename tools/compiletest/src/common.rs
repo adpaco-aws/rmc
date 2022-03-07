@@ -19,6 +19,7 @@ pub enum Mode {
     CargoKani,
     Expected,
     Stub,
+    Report,
 }
 
 impl FromStr for Mode {
@@ -30,6 +31,7 @@ impl FromStr for Mode {
             "cargo-kani" => Ok(CargoKani),
             "expected" => Ok(Expected),
             "stub-tests" => Ok(Stub),
+            "report" => Ok(Report),
             _ => Err(()),
         }
     }
@@ -43,6 +45,7 @@ impl fmt::Display for Mode {
             CargoKani => "cargo-kani",
             Expected => "expected",
             Stub => "stub-tests",
+            Report => "report",
         };
         fmt::Display::fmt(s, f)
     }

@@ -39,6 +39,7 @@ TESTS=(
     "kani-docs cargo-kani"
     "kani-fixme kani-fixme"
     "ui expected"
+    "report report"
 )
 
 # Extract testing suite information and run compiletest

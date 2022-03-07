@@ -12,6 +12,7 @@ use crate::common::{Config, TestPaths};
 use crate::header::TestProps;
 use crate::json;
 use crate::read2::read2_abbreviated;
+use crate::report::{load_report, load_spec, VerificationReport};
 use crate::util::logv;
 use regex::Regex;
 
@@ -65,6 +66,7 @@ impl<'test> TestCx<'test> {
             CargoKani => self.run_cargo_kani_test(),
             Expected => self.run_expected_test(),
             Stub => self.run_stub_test(),
+            Report => self.run_report_test(),
         }
     }
 
@@ -372,6 +374,33 @@ impl<'test> TestCx<'test> {
                 &proc_res,
             );
         }
+    }
+
+    fn run_report_test(&self) {
+        let proc_res = self.run_kani();
+        let report_path = self.testpaths.file.parent().unwrap().join("result.json");
+        let report = load_report(report_path);
+        if report.is_err() {
+            self.fatal_proc_rec(
+                "test failed: verification output could not be read",
+                &proc_res,
+            );
+        }
+        let spec_path = self.testpaths.file.parent().unwrap().join("spec.yml");
+        let spec = load_spec(spec_path);
+        if spec.is_err() {
+            self.fatal_proc_rec(
+                "test failed: verification spec could not be read",
+                &proc_res,
+            );
+        }
+        let spec_fmt = format!("{:?}", spec);
+        self.fatal_proc_rec(
+            &spec_fmt.as_str(),
+            &proc_res,
+        );
+
+
     }
 
     /// Print an error if the verification output does not contain the expected
