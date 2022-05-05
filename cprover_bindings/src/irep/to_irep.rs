@@ -76,6 +76,7 @@ impl ToIrepId for BinaryOperand {
             BinaryOperand::OverflowMult => IrepId::OverflowMult,
             BinaryOperand::OverflowPlus => IrepId::OverflowPlus,
             BinaryOperand::Plus => IrepId::Plus,
+            BinaryOperand::Min => IrepId::Min,
             BinaryOperand::ROk => IrepId::ROk,
             BinaryOperand::Rol => IrepId::Rol,
             BinaryOperand::Ror => IrepId::Ror,

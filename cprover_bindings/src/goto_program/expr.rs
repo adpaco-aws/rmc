@@ -181,6 +181,7 @@ pub enum BinaryOperand {
     OverflowMult,
     OverflowPlus,
     Plus,
+    Min,
     ROk,
     Rol,
     Ror,
@@ -865,6 +866,7 @@ impl Expr {
             }
             // Floating Point Equalities
             IeeeFloatEqual | IeeeFloatNotequal => lhs.typ == rhs.typ && lhs.typ.is_floating_point(),
+            Min => lhs.typ == rhs.typ && lhs.typ.is_numeric(),
             // Overflow flags
             OverflowMinus => {
                 (lhs.typ == rhs.typ && (lhs.typ.is_pointer() || lhs.typ.is_numeric()))
@@ -914,6 +916,7 @@ impl Expr {
             }
             // Floating Point Equalities
             IeeeFloatEqual | IeeeFloatNotequal => Type::bool(),
+            Min => Type::bool(),
             // Overflow flags
             OverflowMinus | OverflowMult | OverflowPlus => Type::bool(),
             ROk => Type::bool(),
@@ -1064,6 +1067,11 @@ impl Expr {
     /// self : floating point != e
     pub fn fneq(self, e: Expr) -> Expr {
         self.binop(IeeeFloatNotequal, e)
+    }
+
+    /// `min(self, e)`
+    pub fn min(self, e: Expr) -> Expr {
+        self.binop(Min, e)
     }
 
     /// `__builtin_rotateleft(self, e)`
