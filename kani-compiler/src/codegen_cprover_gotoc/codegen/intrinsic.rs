@@ -441,12 +441,8 @@ impl<'tcx> GotocCtx<'tcx> {
                     "https://github.com/model-checking/kani/issues/374"
                 )
             }
-            "ceilf32" => codegen_unimplemented_intrinsic!(
-                "https://github.com/model-checking/kani/issues/1025"
-            ),
-            "ceilf64" => codegen_unimplemented_intrinsic!(
-                "https://github.com/model-checking/kani/issues/1025"
-            ),
+            "ceilf32" => codegen_simple_intrinsic!(Ceilf),
+            "ceilf64" => codegen_simple_intrinsic!(Ceil),
             "copy" => unstable_codegen!(_codegen_intrinsic_copy!(Memmove)),
             "copy_nonoverlapping" => unstable_codegen!(_codegen_intrinsic_copy!(Memcpy)),
             "copysignf32" => unstable_codegen!(codegen_simple_intrinsic!(Copysignf)),
