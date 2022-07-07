@@ -7,7 +7,7 @@ use anyhow::{bail, Context, Result};
 use std::cell::RefCell;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::{Command, ExitStatus};
+use std::process::{Command, ExitStatus, Stdio, Child};
 
 /// Contains information about the execution environment and arguments that affect operations
 pub struct KaniSession {
@@ -139,6 +139,37 @@ impl KaniSession {
         cmd.stdout(output_file);
 
         cmd.status().context(format!("Failed to invoke {}", cmd.get_program().to_string_lossy()))
+    }
+
+    /// Run a job, redirect its output to a file, and allow the caller to decide what to do with failure.
+    pub fn run_piped(&self, mut cmd: Command) -> () {
+        // if self.args.verbose || self.args.dry_run {
+        //     if self.args.dry_run {
+        //         // Short circuit. Difficult to mock an ExitStatus :(
+        //         return Ok(<ExitStatus as std::os::unix::prelude::ExitStatusExt>::from_raw(0));
+        //     }
+        // }
+
+        // Create python command to parse cbmc outpu and print final result
+        // let mut python_command = self.format_cbmc_output_live()?;
+
+        // Run the cbmc command as a child process
+        let mut cbmc_process = cmd.stdout(Stdio::piped()).spawn().unwrap();
+        // if let Some(cbmc_stdout) = cbmc_process.stdout.take() {
+            self.format_cbmc_output(cbmc_process);
+        // }
+
+        // Collect live streamed output from cbmc and pass it to the python parser
+        // Execute python command and print final output
+        // if let Some(cbmc_stdout) = cbmc_output.stdout.take() {
+        //     let python_output_child = python_command.stdin(cbmc_stdout).status();
+        //     return python_output_child.context(format!(
+        //         "Failed to invoke {}",
+        //         python_command.get_program().to_string_lossy()
+        //     ));
+        // } else {
+            // Ok(<ExitStatus as std::os::unix::prelude::ExitStatusExt>::from_raw(0))
+        // }
     }
 }
 
