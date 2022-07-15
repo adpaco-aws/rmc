@@ -5,9 +5,9 @@ use anyhow::Result;
 // use std::ffi::OsString;
 use std::path::Path;
 use std::process::Child;
-use crate::cbmc_output_parser::{call_loop, fmt_regular, postprocess_output, CbmcOutput};
+use crate::cbmc_output_parser::{call_loop};
 // use std::process::Command;
-use crate::{args::OutputFormat, cbmc_output_parser::get_cbmc_output};
+use crate::{args::OutputFormat};
 // use std::str::FromStr;
 // use tracing::debug;
 

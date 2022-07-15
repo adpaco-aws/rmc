@@ -16,6 +16,37 @@ pub struct CbmcOutput {
     pub properties: Vec<Property>,
 }
 
+// DeepDive: This is the actual objects being parsed,
+// do we want to rename to `OriginalItem` and have
+// `ExtendedItem` where we extend them with more information?
+// For example, verbosity level.
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+enum ParserItem {
+    Program { program: String },
+    #[serde(rename_all = "camelCase")]
+    Message {
+        message_text: String,
+        message_type: String,
+    },
+    Result { result: Vec<Property>},
+    #[serde(rename_all = "camelCase")]
+    ProverStatus { c_prover_status: String },
+}
+
+use std::fmt::Display;
+impl std::fmt::Display for ParserItem {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self {
+            ParserItem::Program { program } =>
+                write!(f, "{}", program),
+            ParserItem::Message { message_text, .. } =>
+                write!(f, "{}", message_text),
+            _ =>
+                write!(f, "Not implemented!"),
+        }
+    }
+}
 #[derive(Debug, Deserialize)]
 pub struct Message {
     #[serde(rename="messageText")]
@@ -27,12 +58,6 @@ pub struct Message {
 #[derive(Debug, Deserialize)]
 pub struct Program {
     pub program: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct CBMCResult {
-    // #[serde(rename="result")]
-    pub result: Vec<Property>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -110,6 +135,19 @@ fn filter_messages(messages: Vec<Message>) -> Vec<Message> {
     messages
 }
 
+trait Printer {
+    fn print_item(item: ParserItem);
+}
+
+struct AllPrinter {}
+
+impl Printer for AllPrinter {
+    fn print_item(item: ParserItem) {
+        // println!("{:?}", item);
+        println!("{}", item)
+    }
+}
+
 #[derive(Copy, Clone)]
 enum ParserState {
     Initial,
@@ -120,108 +158,90 @@ enum ParserState {
 }
 
 struct Parser {
-    pub state: ParserState,
     pub input_so_far: String,
-    pub counter: u32,
 }
 
-
-#[derive(Debug, Deserialize)]
-enum ParserItem {
-    Program,
-    Message,
+#[derive(PartialEq)]
+enum Action {
+    ClearInput,
+    ProcessItem,
 }
 
 impl Parser {
     pub fn new() -> Self {
-        Parser { state: ParserState::Initial, input_so_far: String::new() , counter: 0 }
+        Parser { input_so_far: String::new() }
     }
 
-    fn is_acceptable(&self, input: String) -> bool {
-        match self.state {
-            ParserState::Initial => input.starts_with("["),
-            ParserState::Waiting => input.starts_with("  {"),
-            ParserState::Processing => true,
-            ParserState::Processed => input.starts_with("  }"),
-            ParserState::Final => input.len() == 0,
-            // Initial => input.starts_with("["),
+    fn triggers_action(&self, input: String) -> Option<Action> {
+        if input.starts_with("[") || input.starts_with("]") {
+            return Some(Action::ClearInput);
+        }
+        if input.starts_with("  }") {
+            return Some(Action::ProcessItem);
+        }
+        None
+    }
+
+    fn clear_input(&mut self) {
+        self.input_so_far = String::new();
+    }
+
+    fn do_action(&mut self, action: Action) {
+        // DeepDive: Do we want printer to be part of parser?
+        // DeepDive: Do we want logger to be part of parser?
+        let printer = AllPrinter {};
+        match action {
+            Action::ClearInput => self.clear_input(),
+            Action::ProcessItem => {
+                let item = self.process_item();
+                // TODO: Transform item?
+                AllPrinter::print_item(item);
+                // TODO: Log item?
+                self.clear_input()
+            }
+            // Another action? Produce JSON file
         }
     }
 
     fn add_to_input(&mut self, input: String) {
-        self.counter += 1;
         self.input_so_far.push_str(input.as_str());
     }
 
-    fn parsed_complete_item(&self) -> bool {
-        let limit = if self.input_so_far.len() > 2 { 2 } else {0};
-        println!("{}", self.counter);
-        println!("ranges: {} {}", 0, self.input_so_far.len()-limit);
-        println!("{}", &self.input_so_far.as_str()[0..self.input_so_far.len()-limit]);
-        // let block: Result<ParserItem, _> = serde_json::from_str(&self.input_so_far.as_str()[0..self.input_so_far.len()-limit]);
-        // if block.is_ok() {
-        //     println!("{:?}", &block);
-        //     return true;
-        // }
-        // let block: Result<Message, _> = serde_json::from_str(&self.input_so_far.as_str()[0..self.input_so_far.len()-limit]);
-        // // let result: Result<, _> = serde_json::from_str(&self.input_so_far.as_str()[0..self.input_so_far.len()-limit]);
-        // if block.is_ok() {
-        //     println!("{:?}", &block);
-        //     return true;
-        // }
-        // let block: Result<CBMCResult, _> = serde_json::from_str(&self.input_so_far.as_str()[0..self.input_so_far.len()-limit]);
-        // if block.is_ok() {
-        //     println!("{:?}", &block);
-        //     return true;
-        // }
-        false
-    }
+    fn process_item(&self) -> ParserItem {
+        // println!("{}", self.counter);
+        // println!("ranges: {} {}", 0, self.input_so_far.len()-limit);
+        // println!("{}", &self.input_so_far.as_str()[0..self.input_so_far.len()-limit]);
 
-    fn check_transition(&mut self) {
-        let has_transition = 
-        match self.state {
-            ParserState::Initial => {self.state = ParserState::Waiting; true }
-            ParserState::Waiting => { self.state = ParserState::Processing; false }
-            // ParserState::Processing => { false }
-            ParserState::Processing => { let flag = self.parsed_complete_item(); if flag { self.state = ParserState::Waiting}; flag }
-            _ => false
-        };
-        //     _ => false
-        // };
-        if has_transition {
-            self.input_so_far = String::new()
+        let block: Result<ParserItem, _> = serde_json::from_str(&self.input_so_far.as_str()[0..self.input_so_far.len()-2]);
+        if block.is_ok() {
+            return block.unwrap();
         }
-        // println!("hey");
-        // if has_transition {
-        //     self.input_so_far = String::new()
-        // }
+
+        let block: Result<ParserItem, _> = serde_json::from_str(&self.input_so_far.as_str()[0..self.input_so_far.len()]);
+        assert!(block.is_ok());
+        return block.unwrap();
     }
 
-    pub fn process_line(&mut self, input: String) {
-        if !self.is_acceptable(input.clone()) {
-            panic!("unexpected input");
-        } else {
-            self.add_to_input(input)
+    pub fn process_line(&mut self, input: String, printer: &AllPrinter) {
+        let action_required = self.triggers_action(input.clone());
+        self.add_to_input(input.clone());
+        if action_required.is_some() {
+            let action = action_required.unwrap();
+            self.do_action(action);
         }
-        self.check_transition();
     }
-
 }
+// impl Iterator for Parser {
+//     fn next(&mut self) -> Option<Self::Item> {
+
+//     }
+// }
 
 pub fn call_loop(mut cmd: Child) {
-    // let stdout = cmd.stdout.as_mut().unwrap();
     let stdout = cmd.stdout.as_mut().unwrap();
     let mut stdout_reader = BufReader::new(stdout);
     let mut parser = Parser::new();
-    // let stream = Deserializer::from_reader(&mut stdout_reader).into_iter::<Value>();
-    // let pars = JsonStreamstdout_reader
-    // let mut counter = 0;
-    // for value in stream {
-    //     println!("{}", value.unwrap());
-    //     counter += 1;
-    // }
-
-    // println!("{}", counter);
+    let mut printer = AllPrinter {};
     loop {
         let mut input = String::new();
         match stdout_reader.read_line(&mut input) {
@@ -229,7 +249,7 @@ pub fn call_loop(mut cmd: Child) {
                 println!("{}", parser.input_so_far);
                 return;
             } else {
-                parser.process_line(input);
+                parser.process_line(input, &printer);
             } 
             Err(error) => {
                 eprintln!("error: {}", error);
@@ -239,43 +259,43 @@ pub fn call_loop(mut cmd: Child) {
     }
 
 }
-fn extract_error_messages(_messages: &Vec<Message>) -> Vec<Message> {
-    Vec::<Message>::new()
-}
+// fn extract_error_messages(_messages: &Vec<Message>) -> Vec<Message> {
+//     Vec::<Message>::new()
+// }
 
-pub fn get_cbmc_output(path: &Path) -> CbmcOutput {
-    let file = fs::File::open(path).unwrap();
-    let reader = BufReader::new(file);
-    let json_array: Vec<Value> = serde_json::from_reader(reader).unwrap();
-    let (all_messages, properties) = extract_messages_and_properties(&json_array);
-    let error_messages = extract_error_messages(&all_messages);
-    if error_messages.len() > 0 {
-        panic!("errors!!");
-    }
-    let messages = filter_messages(all_messages);
-    CbmcOutput { messages, properties }
-}
+// pub fn get_cbmc_output(path: &Path) -> CbmcOutput {
+//     let file = fs::File::open(path).unwrap();
+//     let reader = BufReader::new(file);
+//     let json_array: Vec<Value> = serde_json::from_reader(reader).unwrap();
+//     let (all_messages, properties) = extract_messages_and_properties(&json_array);
+//     let error_messages = extract_error_messages(&all_messages);
+//     if error_messages.len() > 0 {
+//         panic!("errors!!");
+//     }
+//     let messages = filter_messages(all_messages);
+//     CbmcOutput { messages, properties }
+// }
 
 
 
-pub fn postprocess_output(mut cbmc_output: CbmcOutput, extra_checks: bool) -> CbmcOutput {
+// pub fn postprocess_output(mut cbmc_output: CbmcOutput, extra_checks: bool) -> CbmcOutput {
     // has_reachable_unsupported_constructs = has_check_failure(properties, GlobalMessages.UNSUPPORTED_CONSTRUCT_DESC)
     // has_failed_unwinding_asserts = has_check_failure(properties, GlobalMessages.UNWINDING_ASSERT_DESC)
     // has_reachable_undefined_functions = modify_undefined_function_checks(properties)
     // properties, reach_checks = filter_reach_checks(properties)
     // properties = filter_sanity_checks(properties)
-    // annotate_properties_with_reach_results(properties, reach_checks)
-    // remove_check_ids_from_description(properties)
+    // // annotate_properties_with_reach_results(properties, reach_checks)
+    // // remove_check_ids_from_description(properties)
 
-    // if not extra_ptr_check:
-    //     properties = filter_ptr_checks(properties)
-    let has_reachable_unsupported_constructs = has_check_failures(&cbmc_output.properties, UNSUPPORTED_CONSTRUCT_DESC);
-    let has_failed_unwinding_asserts = has_check_failures(&cbmc_output.properties, UNWINDING_ASSERT_DESC);
-    // let has_reachable_undefined_functions = modify_undefined_function_checks()
+    // // if not extra_ptr_check:
+    // //     properties = filter_ptr_checks(properties)
+    // let has_reachable_unsupported_constructs = has_check_failures(&cbmc_output.properties, UNSUPPORTED_CONSTRUCT_DESC);
+    // let has_failed_unwinding_asserts = has_check_failures(&cbmc_output.properties, UNWINDING_ASSERT_DESC);
+    // // let has_reachable_undefined_functions = modify_undefined_function_checks()
 
 
-    cbmc_output
-}
+    // cbmc_output
+// }
 
 fn has_check_failures(properties: &Vec<Property>, message: &str) -> bool {
     for prop in properties.iter() {
