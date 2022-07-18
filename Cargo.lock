@@ -288,6 +288,7 @@ dependencies = [
  "clap",
  "glob",
  "kani_metadata",
+ "regex",
  "serde",
  "serde_json",
  "structopt",

@@ -24,7 +24,7 @@ impl KaniSession {
         let output_format_str = self.args.output_format.to_string();
         // println!("CBMC output args: {:?}", args);
         // let output_format = OutputFormat::from_str(output_format_str);
-        call_loop(cbmc_process);
+        call_loop(cbmc_process, self.args.extra_pointer_checks);
         // let cbmc_output= get_cbmc_output(file);
         // println!("{:?}", cbmc_output);
         // for message in cbmc_output.messages.iter() {
