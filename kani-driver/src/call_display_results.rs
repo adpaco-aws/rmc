@@ -3,11 +3,11 @@
 
 use anyhow::Result;
 // use std::ffi::OsString;
+use crate::cbmc_output_parser::call_loop;
 use std::path::Path;
 use std::process::Child;
-use crate::cbmc_output_parser::{call_loop};
 // use std::process::Command;
-use crate::{args::OutputFormat};
+use crate::args::OutputFormat;
 // use std::str::FromStr;
 // use tracing::debug;
 
@@ -15,16 +15,15 @@ use crate::session::KaniSession;
 
 impl KaniSession {
     /// Display the results of a CBMC run in a user-friendly manner.
-    pub fn  format_cbmc_output(&self, mut cbmc_process: Child) {
+    pub fn format_cbmc_output(&self, mut cbmc_process: Child) {
         // let mut args: Vec<OsString> = vec![
         //     self.cbmc_json_parser_py.clone().into(),
         //     file.into(),
         //     self.args.output_format.to_string().to_lowercase().into(),
         // ];
-        let output_format_str = self.args.output_format.to_string();
         // println!("CBMC output args: {:?}", args);
         // let output_format = OutputFormat::from_str(output_format_str);
-        call_loop(cbmc_process, self.args.extra_pointer_checks);
+        call_loop(cbmc_process, self.args.extra_pointer_checks, &self.args.output_format);
         // let cbmc_output= get_cbmc_output(file);
         // println!("{:?}", cbmc_output);
         // for message in cbmc_output.messages.iter() {

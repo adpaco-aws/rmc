@@ -44,7 +44,7 @@ impl KaniSession {
             let now = Instant::now();
             // let _cbmc_result = self.run_redirect(cmd, &output_filename)?;
             let cbmc_process = self.run_piped(cmd);
-            
+
             // let format_result = self.format_cbmc_output(&output_filename);
             let elapsed = now.elapsed().as_secs_f32();
             // if format_result.is_err() {

@@ -7,7 +7,7 @@ use anyhow::{bail, Context, Result};
 use std::cell::RefCell;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::{Command, ExitStatus, Stdio, Child};
+use std::process::{Child, Command, ExitStatus, Stdio};
 
 /// Contains information about the execution environment and arguments that affect operations
 pub struct KaniSession {
@@ -156,7 +156,7 @@ impl KaniSession {
         // Run the cbmc command as a child process
         let mut cbmc_process = cmd.stdout(Stdio::piped()).spawn().unwrap();
         // if let Some(cbmc_stdout) = cbmc_process.stdout.take() {
-            self.format_cbmc_output(cbmc_process);
+        self.format_cbmc_output(cbmc_process);
         // }
 
         // Collect live streamed output from cbmc and pass it to the python parser
@@ -168,7 +168,7 @@ impl KaniSession {
         //         python_command.get_program().to_string_lossy()
         //     ));
         // } else {
-            // Ok(<ExitStatus as std::os::unix::prelude::ExitStatusExt>::from_raw(0))
+        // Ok(<ExitStatus as std::os::unix::prelude::ExitStatusExt>::from_raw(0))
         // }
     }
 }
