@@ -5,10 +5,10 @@ use anyhow::{bail, Result};
 use kani_metadata::HarnessMetadata;
 use std::ffi::OsString;
 use std::path::Path;
-use std::process::Command;
+use std::process::{Child, Command};
 use std::time::Instant;
 
-use crate::args::KaniArgs;
+use crate::args::{KaniArgs, OutputFormat};
 use crate::session::KaniSession;
 
 #[derive(PartialEq, Eq)]
@@ -33,20 +33,26 @@ impl KaniSession {
         let mut cmd = Command::new("cbmc");
         cmd.args(args);
 
-        if self.args.output_format == crate::args::OutputFormat::Old {
+        let now = Instant::now();
+        let result = if self.args.output_format == crate::args::OutputFormat::Old {
             if self.run_terminal(cmd).is_err() {
-                return Ok(VerificationStatus::Failure);
+                VerificationStatus::Failure
+            } else {
+                VerificationStatus::Success
             }
         } else {
             // extra argument
-            cmd.arg("--json-ui");
+            // cmd.arg("--json-ui");
 
-            let now = Instant::now();
             // let _cbmc_result = self.run_redirect(cmd, &output_filename)?;
             let cbmc_process = self.run_piped(cmd);
-
+            let result = if cbmc_process.is_none() {
+                false
+            } else {
+                self.format_cbmc_output(cbmc_process.unwrap())
+            };
             // let format_result = self.format_cbmc_output(&output_filename);
-            let elapsed = now.elapsed().as_secs_f32();
+
             // if format_result.is_err() {
             //     // Because of things like --assertion-reach-checks and other future features,
             //     // we now decide if we fail or not based solely on the output of the formatter.
@@ -55,10 +61,12 @@ impl KaniSession {
             //     // the best possible fix is port to rust instead of using python, or getting more
             //     // feedback than just exit status (or using a particular magic exit code?)
             // }
-            println!("Verification Time: {}s", elapsed);
-        }
 
-        Ok(VerificationStatus::Success)
+            if result { VerificationStatus::Success } else { VerificationStatus::Failure }
+        };
+        let elapsed = now.elapsed().as_secs_f32();
+        println!("Verification Time: {}s", elapsed);
+        Ok(result)
     }
 
     /// used by call_cbmc_viewer, invokes different variants of CBMC.
@@ -103,6 +111,9 @@ impl KaniSession {
 
         args.push("--slice-formula".into());
 
+        if self.args.output_format != OutputFormat::Old {
+            args.push("--json-ui".into());
+        }
         args.extend(self.args.cbmc_args.iter().cloned());
 
         args.push(file.to_owned().into_os_string());

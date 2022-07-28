@@ -3,7 +3,7 @@
 
 use crate::args::KaniArgs;
 use crate::util::render_command;
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Context, Error, Result};
 use std::cell::RefCell;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -142,21 +142,22 @@ impl KaniSession {
     }
 
     /// Run a job, redirect its output to a file, and allow the caller to decide what to do with failure.
-    pub fn run_piped(&self, mut cmd: Command) -> () {
-        // if self.args.verbose || self.args.dry_run {
-        //     if self.args.dry_run {
-        //         // Short circuit. Difficult to mock an ExitStatus :(
-        //         return Ok(<ExitStatus as std::os::unix::prelude::ExitStatusExt>::from_raw(0));
-        //     }
-        // }
+    pub fn run_piped(&self, mut cmd: Command) -> Option<Child> {
+        if self.args.verbose || self.args.dry_run {
+            println!("{}", render_command(&cmd).to_string_lossy());
+            if self.args.dry_run {
+                // Short circuit. Difficult to mock an ExitStatus :(
+                return None;
+            }
+        }
 
         // Create python command to parse cbmc outpu and print final result
         // let mut python_command = self.format_cbmc_output_live()?;
 
         // Run the cbmc command as a child process
-        let mut cbmc_process = cmd.stdout(Stdio::piped()).spawn().unwrap();
+        let cbmc_process = cmd.stdout(Stdio::piped()).spawn().unwrap();
+        Some(cbmc_process)
         // if let Some(cbmc_stdout) = cbmc_process.stdout.take() {
-        self.format_cbmc_output(cbmc_process);
         // }
 
         // Collect live streamed output from cbmc and pass it to the python parser

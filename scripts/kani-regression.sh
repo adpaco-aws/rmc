@@ -42,13 +42,13 @@ time "$KANI_DIR"/tests/output-files/check-output.sh
 
 # Declare testing suite information (suite and mode)
 TESTS=(
-    "kani kani"
-    "expected expected"
-    "ui expected"
-    "firecracker kani"
-    "prusti kani"
-    "smack kani"
-    "cargo-kani cargo-kani"
+    # "kani kani"
+    # "expected expected"
+    # "ui expected"
+    # "firecracker kani"
+    # "prusti kani"
+    # "smack kani"
+    # "cargo-kani cargo-kani"
     "cargo-ui cargo-kani"
     "kani-docs cargo-kani"
     "kani-fixme kani-fixme"

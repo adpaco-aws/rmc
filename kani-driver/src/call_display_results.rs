@@ -15,7 +15,7 @@ use crate::session::KaniSession;
 
 impl KaniSession {
     /// Display the results of a CBMC run in a user-friendly manner.
-    pub fn format_cbmc_output(&self, mut cbmc_process: Child) {
+    pub fn format_cbmc_output(&self, mut cbmc_process: Child) -> bool {
         // let mut args: Vec<OsString> = vec![
         //     self.cbmc_json_parser_py.clone().into(),
         //     file.into(),
@@ -23,7 +23,7 @@ impl KaniSession {
         // ];
         // println!("CBMC output args: {:?}", args);
         // let output_format = OutputFormat::from_str(output_format_str);
-        call_loop(cbmc_process, self.args.extra_pointer_checks, &self.args.output_format);
+        call_loop(cbmc_process, self.args.extra_pointer_checks, &self.args.output_format)
         // let cbmc_output= get_cbmc_output(file);
         // println!("{:?}", cbmc_output);
         // for message in cbmc_output.messages.iter() {

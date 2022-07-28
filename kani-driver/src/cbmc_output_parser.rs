@@ -17,53 +17,138 @@ use std::{
 use structopt::lazy_static::lazy_static;
 
 lazy_static! {
-    static ref CBMC_DESCRIPTIONS: HashMap<&'static str, Vec<(&'static str, &'static str)>> = {
+    static ref CBMC_DESCRIPTIONS: HashMap<&'static str, Vec<(&'static str, Option<&'static str>)>> = {
         let mut map = HashMap::new();
+        map.insert("error_label", vec![]);
+        map.insert("division-by-zero", vec![("division by zero", None)]);
+        map.insert("enum-range-check", vec![("enum range check", None)]);
+        map.insert(
+            "undefined-shift",
+            vec![
+                ("shift distance is negative", None),
+                ("shift distance too large", None),
+                ("shift operand is negative", None),
+                ("shift of non-integer type", None),
+            ],
+        );
         map.insert(
             "overflow",
             vec![
-                ("arithmetic overflow on signed +", "arithmetic overflow on signed addition"),
-                ("arithmetic overflow on signed -", "arithmetic overflow on signed subtraction"),
-                ("arithmetic overflow on signed *", "arithmetic overflow on signed multiplication"),
-                ("arithmetic overflow on unsigned +", "arithmetic overflow on unsigned addition"),
+                ("result of signed mod is not representable", None),
+                ("arithmetic overflow on signed type conversion", None),
+                ("arithmetic overflow on signed division", None),
+                ("arithmetic overflow on signed unary minus", None),
+                ("arithmetic overflow on signed shl", None),
+                ("arithmetic overflow on unsigned unary minus", None),
+                ("arithmetic overflow on signed +", Some("arithmetic overflow on signed addition")),
+                (
+                    "arithmetic overflow on signed -",
+                    Some("arithmetic overflow on signed subtraction"),
+                ),
+                (
+                    "arithmetic overflow on signed *",
+                    Some("arithmetic overflow on signed multiplication"),
+                ),
+                (
+                    "arithmetic overflow on unsigned +",
+                    Some("arithmetic overflow on unsigned addition"),
+                ),
                 (
                     "arithmetic overflow on unsigned -",
-                    "arithmetic overflow on unsigned subtraction",
+                    Some("arithmetic overflow on unsigned subtraction"),
                 ),
                 (
                     "arithmetic overflow on unsigned *",
-                    "arithmetic overflow on unsigned multiplication",
+                    Some("arithmetic overflow on unsigned multiplication"),
                 ),
+                ("arithmetic overflow on floating-point typecast", None),
+                ("arithmetic overflow on floating-point division", None),
+                ("arithmetic overflow on floating-point addition", None),
+                ("arithmetic overflow on floating-point subtraction", None),
+                ("arithmetic overflow on floating-point multiplication", None),
+                ("arithmetic overflow on unsigned to signed type conversion", None),
+                ("arithmetic overflow on float to signed integer type conversion", None),
+                ("arithmetic overflow on signed to unsigned type conversion", None),
+                ("arithmetic overflow on unsigned to unsigned type conversion", None),
+                ("arithmetic overflow on float to unsigned integer type conversion", None),
             ],
         );
         map.insert(
             "NaN",
             vec![
-                ("NaN on +", "NaN on addition"),
-                ("NaN on -", "NaN on subtraction"),
-                ("NaN on /", "NaN on division"),
-                ("NaN on *", "NaN on multiplication"),
+                ("NaN on +", Some("NaN on addition")),
+                ("NaN on -", Some("NaN on subtraction")),
+                ("NaN on /", Some("NaN on division")),
+                ("NaN on *", Some("NaN on multiplication")),
+            ],
+        );
+        map.insert("pointer", vec![("same object violation", None)]);
+        map.insert(
+            "pointer_arithmetic",
+            vec![
+                ("pointer relation: deallocated dynamic object", None),
+                ("pointer relation: dead object", None),
+                ("pointer relation: pointer NULL", None),
+                ("pointer relation: pointer invalid", None),
+                ("pointer relation: pointer outside dynamic object bounds", None),
+                ("pointer relation: pointer outside object bounds", None),
+                ("pointer relation: invalid integer address", None),
+                ("pointer arithmetic: deallocated dynamic object", None),
+                ("pointer arithmetic: dead object", None),
+                ("pointer arithmetic: pointer NULL", None),
+                ("pointer arithmetic: pointer invalid", None),
+                ("pointer arithmetic: pointer outside dynamic object bounds", None),
+                ("pointer arithmetic: pointer outside object bounds", None),
+                ("pointer arithmetic: invalid integer address", None),
             ],
         );
         map.insert(
             "pointer_dereference",
-            vec![(
-                "dereferenced function pointer must be",
-                "dereference failure: invalid function pointer",
-            )],
+            vec![
+                (
+                    "dereferenced function pointer must be",
+                    Some("dereference failure: invalid function pointer"),
+                ),
+                ("dereference failure: pointer NULL", None),
+                ("dereference failure: pointer invalid", None),
+                ("dereference failure: deallocated dynamic object", None),
+                ("dereference failure: dead object", None),
+                ("dereference failure: pointer outside dynamic object bounds", None),
+                ("dereference failure: pointer outside object bounds", None),
+                ("dereference failure: invalid integer address", None),
+            ],
         );
         map.insert(
             "pointer_primitives",
-            vec![("deallocated dynamic object", "pointer to deallocated dynamic object")],
+            vec![
+                ("pointer invalid", None),
+                ("deallocated dynamic object", Some("pointer to deallocated dynamic object")),
+                ("dead object", Some("pointer to dead object")),
+                ("pointer outside dynamic object bounds", None),
+                ("pointer outside object bounds", None),
+                ("invalid integer address", None),
+            ],
         );
-        map.insert("pointer_dereference", vec![("lower bound", "index out of bounds")]);
         map.insert(
             "array_bounds",
-            vec![(
-                "upper bound",
-                "index out of bounds: the length is less than or equal to the given index",
-            )],
+            vec![
+                ("lower bound", Some("index out of bounds")),
+                (
+                    "upper bound",
+                    Some(
+                        "index out of bounds: the length is less than or equal to the given index",
+                    ),
+                ),
+            ],
         );
+        map.insert(
+            "bit_count",
+            vec![
+                ("count trailing zeros is undefined for value zero", None),
+                ("count leading zeros is undefined for value zero", None),
+            ],
+        );
+        map.insert("memory-leak", vec![("dynamically allocated memory never freed", None)]);
         map
     };
 }
@@ -146,8 +231,10 @@ impl std::fmt::Display for SourceLocation {
         } else {
             fmt_str.push_str("Unknown File");
         }
-        let fun_str = format!(" in function {}", self.function);
-        fmt_str.push_str(fun_str.as_str());
+        if self.function.is_some() {
+            let fun_str = format!(" in function {}", self.function.clone().unwrap());
+            fmt_str.push_str(fun_str.as_str());
+        }
 
         write! {f, "{}", fmt_str}
     }
@@ -191,10 +278,15 @@ pub struct Property {
 pub struct SourceLocation {
     pub column: Option<String>,
     pub file: Option<String>,
-    pub function: String,
+    pub function: Option<String>,
     pub line: Option<String>,
 }
 
+impl SourceLocation {
+    fn is_missing(&self) -> bool {
+        self.file.is_none() && self.function.is_none()
+    }
+}
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TraceItem {
@@ -326,59 +418,94 @@ impl<'a, 'b> Iterator for Parser<'a, 'b> {
     }
 }
 
-fn process_item(item: ParserItem, extra_ptr_checks: bool) -> ParserItem {
+fn process_item(item: ParserItem, extra_ptr_checks: bool, res: &mut bool) -> ParserItem {
     match item {
         ParserItem::Result { result } => {
-            let postprocessed_result = postprocess_result(result, extra_ptr_checks);
+            let (postprocessed_result, overall_status) =
+                postprocess_result(result, extra_ptr_checks);
+            *res = overall_status;
             ParserItem::Result { result: postprocessed_result }
+        }
+        ParserItem::Message { ref message_type, .. } if message_type == "ERROR" => {
+            postprocess_error_message(item)
         }
         item => item,
     }
 }
 
+fn postprocess_error_message(message: ParserItem) -> ParserItem {
+    if let ParserItem::Message { ref message_text, ref message_type } = message && message_text.contains("use the `--object-bits n` option") {
+        ParserItem::Message {
+            message_text: message_text.replace("--object-bits ", "--enable-unstable --cbmc-args --object-bits "),
+            message_type: String::from("ERROR") }
+    } else {
+        message
+    }
+}
 fn must_be_skipped(item: &ParserItem) -> bool {
     matches!(item, ParserItem::Message { message_text, .. } if message_text.starts_with("Building error trace"))
         || matches!(item, ParserItem::Message { message_text, .. } if message_text.starts_with("VERIFICATION"))
 }
 
-pub fn call_loop(mut cmd: Child, extra_ptr_checks: bool, output_format: &OutputFormat) {
+pub fn call_loop(mut cmd: Child, extra_ptr_checks: bool, output_format: &OutputFormat) -> bool {
     let stdout = cmd.stdout.as_mut().unwrap();
     let mut stdout_reader = BufReader::new(stdout);
     let parser = Parser::new(&mut stdout_reader);
+    let mut result = false;
 
     for item in parser {
         if must_be_skipped(&item) {
             continue;
         }
-        dbg!(item);
-        let trans_item = process_item(item, extra_ptr_checks);
+        // dbg!(&item);
+        let trans_item = process_item(item, extra_ptr_checks, &mut result);
+        // if add_items.is_some() {
+        //     result = add_items.unwrap();
+        // }
         let formatted_item = format_item(&trans_item, &output_format);
-        println!("{}", formatted_item);
+        if formatted_item.is_some() {
+            println!("{}", formatted_item.unwrap())
+        };
+    }
+    result
+}
+
+fn format_item(item: &ParserItem, output_format: &OutputFormat) -> Option<String> {
+    match output_format {
+        OutputFormat::Old => todo!(),
+        OutputFormat::Regular => format_item_regular(item),
+        OutputFormat::Terse => format_item_terse(item),
     }
 }
 
-fn format_item(item: &ParserItem, output_format: &OutputFormat) -> String {
-    // match output_format {
-    //     OutputFormat::Old => todo!(),
-    //     OutputFormat::Regular => format_regular(),
-    // }
+fn format_item_regular(item: &ParserItem) -> Option<String> {
     match item {
-        ParserItem::Program { program } => format!("{}", program),
-        ParserItem::Message { message_text, .. } => format!("{}", message_text),
-        ParserItem::Result { result } => format_result(result),
-        _ => String::from(""),
+        ParserItem::Program { program } => Some(format!("{}", program)),
+        ParserItem::Message { message_text, .. } => Some(format!("{}", message_text)),
+        ParserItem::Result { result } => Some(format_result(result, true)),
+        _ => None,
     }
 }
 
-fn format_result(properties: &Vec<Property>) -> String {
+fn format_item_terse(item: &ParserItem) -> Option<String> {
+    match item {
+        ParserItem::Result { result } => Some(format_result(result, false)),
+        _ => None,
+    }
+}
+
+fn format_result(properties: &Vec<Property>, show_checks: bool) -> String {
     let mut result_str = String::new();
     let mut number_tests_failed = 0;
     let mut number_tests_unreachable = 0;
     let mut number_tests_undetermined = 0;
     let mut failed_tests: Vec<&Property> = vec![];
 
-    result_str.push_str("RESULTS:\n");
     let mut index = 1;
+
+    if show_checks {
+        result_str.push_str("\nRESULTS:\n");
+    }
 
     for prop in properties {
         let name = &prop.property;
@@ -401,84 +528,122 @@ fn format_result(properties: &Vec<Property>) -> String {
             _ => (),
         }
 
-        let check_id = format!("Check {}: {}\n", index, name);
-        let status_msg = format!("\t - Status: {}\n", status);
-        let descrition_msg = format!("\t - Description: \"{}\"\n", description);
-        let location_msg = format!("\t - Location: {}\n", location);
+        if show_checks {
+            let check_id = format!("Check {}: {}\n", index, name);
+            let status_msg = format!("\t - Status: {}\n", status);
+            let descrition_msg = format!("\t - Description: \"{}\"\n", description);
 
-        result_str.push_str(check_id.as_str());
-        result_str.push_str(status_msg.as_str());
-        result_str.push_str(descrition_msg.as_str());
-        result_str.push_str(location_msg.as_str());
-        result_str.push_str("\n");
+            result_str.push_str(check_id.as_str());
+            result_str.push_str(status_msg.as_str());
+            result_str.push_str(descrition_msg.as_str());
 
-        let mut other_status = Vec::<String>::new();
-        if number_tests_undetermined > 0 {
-            let undetermined_str = format!("{} undetermined", number_tests_undetermined);
-            other_status.push(undetermined_str);
+            if !location.is_missing() {
+                let location_msg = format!("\t - Location: {}\n", location);
+                result_str.push_str(location_msg.as_str());
+            }
+            result_str.push_str("\n");
         }
-        if number_tests_unreachable > 0 {
-            let unreachable_str = format!("{} unreachable", number_tests_unreachable);
-            other_status.push(unreachable_str);
-        }
-        if other_status.len() > 0 {
-            result_str.push_str(" (");
-            result_str.push_str(&other_status.join(","));
-            result_str.push_str(")");
-        }
-        result_str.push_str("\n");
 
         index += 1;
     }
 
-    let summary =
-        format!("\nSUMMARY: \n ** {} of {} failed", number_tests_failed, properties.len());
+    if show_checks {
+        result_str.push_str("\nSUMMARY:");
+    } else {
+        result_str.push_str("\nVERIFICATION RESULT:");
+    }
+    let summary = format!("\n ** {} of {} failed", number_tests_failed, properties.len());
     result_str.push_str(summary.as_str());
+
+    let mut other_status = Vec::<String>::new();
+    if number_tests_undetermined > 0 {
+        let undetermined_str = format!("{} undetermined", number_tests_undetermined);
+        other_status.push(undetermined_str);
+    }
+    if number_tests_unreachable > 0 {
+        let unreachable_str = format!("{} unreachable", number_tests_unreachable);
+        other_status.push(unreachable_str);
+    }
+    if other_status.len() > 0 {
+        result_str.push_str(" (");
+        result_str.push_str(&other_status.join(","));
+        result_str.push_str(")");
+    }
     result_str.push_str("\n");
 
     for prop in failed_tests {
-        let failure_description = prop.description.clone();
-        // assert!(prop)
-        let failure_trace = prop.trace.clone().unwrap();
-        let failure_source =
-            failure_trace[failure_trace.len() - 1].source_location.clone().unwrap();
-
-        let failure_file = failure_source.file.unwrap();
-        let failure_function = failure_source.function;
-        let failure_line = failure_source.line.unwrap();
-
-        let failure_message = format!(
-            "Failed Checks: {}\n File: \"{}\", line {}, in {}\n",
-            failure_description, failure_file, failure_line, failure_function
-        );
+        let failure_message = build_failure_message(prop.description.clone(), &prop.trace.clone());
         result_str.push_str(failure_message.as_str());
     }
 
-    let verification_result = if number_tests_failed == 0 { "SUCESSFUL " } else { "FAILED" };
-    let overall_result = format!("VERIFICATION:- {}\n", verification_result);
+    let verification_result = if number_tests_failed == 0 { "SUCCESSFUL " } else { "FAILED" };
+    let overall_result = format!("\nVERIFICATION:- {}\n", verification_result);
     result_str.push_str(overall_result.as_str());
+
+    if has_check_failures(&properties, UNSUPPORTED_CONSTRUCT_DESC) {
+        result_str.push_str(
+            "** WARNING: A Rust construct that is not currently supported \
+        by Kani was found to be reachable. Check the results for \
+        more details.",
+        );
+    }
+    if has_check_failures(&properties, UNWINDING_ASSERT_DESC) {
+        result_str.push_str("[Kani] info: Verification output shows one or more unwinding failures.\n\
+        [Kani] tip: Consider increasing the unwinding value or disabling `--unwinding-assertions`.\n");
+    }
 
     result_str
 }
 
-pub fn postprocess_result(mut properties: Vec<Property>, extra_ptr_checks: bool) -> Vec<Property> {
+fn build_failure_message(description: String, trace: &Option<Vec<TraceItem>>) -> String {
+    let backup_failure_message = format!("Failed Checks: {}\n", description);
+    if trace.is_none() {
+        return backup_failure_message;
+    }
+    let failure_trace = trace.clone().unwrap();
+
+    let failure_source_wrap = failure_trace[failure_trace.len() - 1].source_location.clone();
+    if failure_source_wrap.is_none() {
+        return backup_failure_message;
+    }
+    let failure_source = failure_source_wrap.unwrap();
+
+    if failure_source.file.is_some()
+        && failure_source.function.is_some()
+        && failure_source.line.is_some()
+    {
+        let failure_file = failure_source.file.unwrap();
+        let failure_function = failure_source.function.unwrap();
+        let failure_line = failure_source.line.unwrap();
+        return format!(
+            "Failed Checks: {}\n File: \"{}\", line {}, in {}\n",
+            description, failure_file, failure_line, failure_function
+        );
+    }
+    backup_failure_message
+}
+
+pub fn postprocess_result(
+    mut properties: Vec<Property>,
+    extra_ptr_checks: bool,
+) -> (Vec<Property>, bool) {
     let has_reachable_unsupported_constructs =
         has_check_failures(&properties, UNSUPPORTED_CONSTRUCT_DESC);
     let has_failed_unwinding_asserts = has_check_failures(&properties, UNWINDING_ASSERT_DESC);
-    println!("properties: {:?}\n", properties);
+    // println!("properties: {:?}\n", properties);
     let (properties_with_undefined, has_reachable_undefined_functions) =
         modify_undefined_function_checks(properties);
-    println!("properties_with_undefined: {:?}\n", properties_with_undefined);
+    // println!("properties_with_undefined: {:?}\n", properties_with_undefined);
     let (properties_without_reachs, reach_checks) = filter_reach_checks(properties_with_undefined);
-    println!("properties_without_reachs: {:?}\n", properties_without_reachs);
-    println!("reach_checks: {:?}\n", reach_checks);
+    // println!("properties_without_reachs: {:?}\n", properties_without_reachs);
+    // println!("reach_checks: {:?}\n", reach_checks);
     let properties_without_sanity_checks = filter_sanity_checks(properties_without_reachs);
-    println!("properties_without_sanity_checks: {:?}\n", properties_without_sanity_checks);
+    // println!("properties_without_sanity_checks: {:?}\n", properties_without_sanity_checks);
     let properties_annotated =
         annotate_properties_with_reach_results(properties_without_sanity_checks, reach_checks);
-    println!("properties_annotated: {:?}\n", properties_annotated);
+    // println!("properties_annotated: {:?}\n", properties_annotated);
     let properties_without_ids = remove_check_ids_from_description(properties_annotated);
-    println!("properties_without_ids: {:?}\n", properties_without_ids);
+    // println!("properties_without_ids: {:?}\n", properties_without_ids);
 
     let new_properties = if !extra_ptr_checks {
         filter_ptr_checks(properties_without_ids)
@@ -490,18 +655,31 @@ pub fn postprocess_result(mut properties: Vec<Property>, extra_ptr_checks: bool)
         || has_reachable_undefined_functions;
     let final_properties = final_changes(new_properties, has_fundamental_failures);
     // TODO: Return a flag or messages?
-    final_properties
+    let overall_result = determine_result(&final_properties);
+    (final_properties, overall_result)
+}
+
+fn determine_result(properties: &Vec<Property>) -> bool {
+    let number_failed =
+        properties.iter().filter(|prop| prop.status == CheckStatus::Failure).count();
+    number_failed == 0
 }
 
 fn get_readable_description(property: &Property) -> String {
     let original = property.description.clone();
     let class_id = extract_property_class(property).unwrap();
+    // dbg!(&class_id);
     let description_alternatives = CBMC_DESCRIPTIONS.get(class_id);
     if description_alternatives.is_some() {
         let alt_descriptions = description_alternatives.unwrap();
-        for (desc_to_match, desc_to_replace) in alt_descriptions {
+        for (desc_to_match, opt_desc_to_replace) in alt_descriptions {
             if original.contains(desc_to_match) {
-                return original.replace(desc_to_match, &desc_to_replace);
+                if opt_desc_to_replace.is_some() {
+                    let desc_to_replace = opt_desc_to_replace.unwrap();
+                    return desc_to_replace.to_string();
+                } else {
+                    return desc_to_match.to_string();
+                }
             }
         }
     }
@@ -527,6 +705,7 @@ fn final_changes(mut properties: Vec<Property>, has_fundamental_failures: bool) 
     }
     properties
 }
+
 fn filter_ptr_checks(properties: Vec<Property>) -> Vec<Property> {
     let props = properties
         .into_iter()
@@ -602,19 +781,23 @@ fn annotate_properties_with_reach_results(
     for reach_check in reach_checks {
         let description = reach_check.description;
         let check_id = re.captures(description.as_str()).unwrap().get(0).unwrap().as_str();
-        let check_id_str = String::from(check_id);
+        let check_id_str = format!("[{}]", check_id);
         let status = reach_check.status;
         let res_ins = hash_map.insert(check_id_str, status);
         assert!(res_ins.is_none());
     }
-
+    // dbg!(&hash_map);
     for prop in properties.iter_mut() {
         let description = &prop.description;
-        let id_str = format!("\\[{}\\]", description);
-        let match_obj = re.captures(id_str.as_str());
-        if match_obj.is_some() {
-            let prop_match_id = match_obj.unwrap().get(0).unwrap().as_str();
+        // let id_str = format!("\\[{}\\]", description);
+        // let match_obj = re.captures(id_str.as_str());
+        let re2 = Regex::new(r"\[KANI_CHECK_ID_([^\]]*)\]").unwrap();
+        if re2.is_match(description) {
+            let prop_match_id =
+                re2.captures(description.as_str()).unwrap().get(0).unwrap().as_str();
+            // dbg!(&prop_match_id);
             let status_from = hash_map.get(&prop_match_id.to_string());
+            // assert!(status_from.is_some());
             if status_from.is_some() {
                 prop.reach = Some(*status_from.unwrap());
             }
@@ -624,7 +807,9 @@ fn annotate_properties_with_reach_results(
 }
 
 fn has_check_failures(properties: &Vec<Property>, message: &str) -> bool {
-    let properties_with =
-        properties.iter().filter(|prop| prop.description.contains(message)).count();
+    let properties_with = properties
+        .iter()
+        .filter(|prop| prop.description.contains(message) && prop.status == CheckStatus::Failure)
+        .count();
     return properties_with > 0;
 }
