@@ -3,7 +3,7 @@
 
 use crate::args::KaniArgs;
 use crate::util::render_command;
-use anyhow::{bail, Context, Error, Result};
+use anyhow::{bail, Context, Result};
 use std::cell::RefCell;
 use std::io::Write;
 use std::path::{Path, PathBuf};

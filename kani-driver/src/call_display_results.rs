@@ -1,21 +1,13 @@
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-use anyhow::Result;
-// use std::ffi::OsString;
 use crate::cbmc_output_parser::call_loop;
-use std::path::Path;
-use std::process::Child;
-// use std::process::Command;
-use crate::args::OutputFormat;
-// use std::str::FromStr;
-// use tracing::debug;
-
 use crate::session::KaniSession;
+use std::process::Child;
 
 impl KaniSession {
     /// Display the results of a CBMC run in a user-friendly manner.
-    pub fn format_cbmc_output(&self, mut cbmc_process: Child) -> bool {
+    pub fn format_cbmc_output(&self, cbmc_process: Child) -> bool {
         // let mut args: Vec<OsString> = vec![
         //     self.cbmc_json_parser_py.clone().into(),
         //     file.into(),
