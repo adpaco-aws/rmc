@@ -3,15 +3,13 @@
 
 use anyhow::Result;
 use pathdiff::diff_paths;
-use regex::{Captures, Regex};
+use regex::Regex;
 use serde::Deserialize;
-use serde_json::{Deserializer, Value};
-use std::str::FromStr;
 use std::{
     collections::HashMap,
-    env, fs,
-    io::{self, BufRead, BufReader},
-    path::{Path, PathBuf},
+    env,
+    io::{BufRead, BufReader},
+    path::PathBuf,
     process::{Child, ChildStdout},
 };
 use structopt::lazy_static::lazy_static;
@@ -184,11 +182,9 @@ enum ParserItem {
     },
     #[serde(rename_all = "camelCase")]
     ProverStatus {
-        c_prover_status: String,
+        _c_prover_status: String,
     },
 }
-
-use std::fmt::Display;
 
 impl std::fmt::Display for CheckStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -434,7 +430,7 @@ fn process_item(item: ParserItem, extra_ptr_checks: bool, res: &mut bool) -> Par
 }
 
 fn postprocess_error_message(message: ParserItem) -> ParserItem {
-    if let ParserItem::Message { ref message_text, ref message_type } = message && message_text.contains("use the `--object-bits n` option") {
+    if let ParserItem::Message { ref message_text, message_type: _ } = message && message_text.contains("use the `--object-bits n` option") {
         ParserItem::Message {
             message_text: message_text.replace("--object-bits ", "--enable-unstable --cbmc-args --object-bits "),
             message_type: String::from("ERROR") }
@@ -624,7 +620,7 @@ fn build_failure_message(description: String, trace: &Option<Vec<TraceItem>>) ->
 }
 
 pub fn postprocess_result(
-    mut properties: Vec<Property>,
+    properties: Vec<Property>,
     extra_ptr_checks: bool,
 ) -> (Vec<Property>, bool) {
     let has_reachable_unsupported_constructs =

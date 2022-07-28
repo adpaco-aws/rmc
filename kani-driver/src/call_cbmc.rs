@@ -5,7 +5,7 @@ use anyhow::{bail, Result};
 use kani_metadata::HarnessMetadata;
 use std::ffi::OsString;
 use std::path::Path;
-use std::process::{Child, Command};
+use std::process::Command;
 use std::time::Instant;
 
 use crate::args::{KaniArgs, OutputFormat};
