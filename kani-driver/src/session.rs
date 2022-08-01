@@ -141,36 +141,24 @@ impl KaniSession {
         cmd.status().context(format!("Failed to invoke {}", cmd.get_program().to_string_lossy()))
     }
 
-    /// Run a job, redirect its output to a file, and allow the caller to decide what to do with failure.
-    pub fn run_piped(&self, mut cmd: Command) -> Option<Child> {
+    /// Run a job and redirect its output to this process.
+    /// Returns an error if the process could not be spawned
+    pub fn run_piped(&self, mut cmd: Command) -> Result<Option<Child>> {
         if self.args.verbose || self.args.dry_run {
             println!("{}", render_command(&cmd).to_string_lossy());
             if self.args.dry_run {
-                // Short circuit. Difficult to mock an ExitStatus :(
-                return None;
+                return Ok(None);
             }
         }
+        // Run the process as a child process
+        let process = cmd.stdout(Stdio::piped()).spawn();
 
-        // Create python command to parse cbmc outpu and print final result
-        // let mut python_command = self.format_cbmc_output_live()?;
-
-        // Run the cbmc command as a child process
-        let cbmc_process = cmd.stdout(Stdio::piped()).spawn().unwrap();
-        Some(cbmc_process)
-        // if let Some(cbmc_stdout) = cbmc_process.stdout.take() {
-        // }
-
-        // Collect live streamed output from cbmc and pass it to the python parser
-        // Execute python command and print final output
-        // if let Some(cbmc_stdout) = cbmc_output.stdout.take() {
-        //     let python_output_child = python_command.stdin(cbmc_stdout).status();
-        //     return python_output_child.context(format!(
-        //         "Failed to invoke {}",
-        //         python_command.get_program().to_string_lossy()
-        //     ));
-        // } else {
-        // Ok(<ExitStatus as std::os::unix::prelude::ExitStatusExt>::from_raw(0))
-        // }
+        // Render the command if the process could not be spawned
+        if process.is_err() {
+            bail!("Could not spawn process `{}`", render_command(&cmd).to_string_lossy());
+        }
+        // Return the child process handle
+        Ok(Some(process.unwrap()))
     }
 }
 
