@@ -58,7 +58,7 @@ impl KaniSession {
                 Ok(VerificationStatus::Failure)
             }
         };
-        if self.args.dry_run {
+        if !self.args.dry_run {
             let elapsed = now.elapsed().as_secs_f32();
             println!("Verification Time: {}s", elapsed);
         }

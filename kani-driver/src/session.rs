@@ -141,7 +141,7 @@ impl KaniSession {
         cmd.status().context(format!("Failed to invoke {}", cmd.get_program().to_string_lossy()))
     }
 
-    /// Run a job and redirect its output to this process.
+    /// Run a job and pipe its output to this process.
     /// Returns an error if the process could not be spawned
     pub fn run_piped(&self, mut cmd: Command) -> Result<Option<Child>> {
         if self.args.verbose || self.args.dry_run {
