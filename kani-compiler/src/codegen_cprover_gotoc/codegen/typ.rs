@@ -1483,15 +1483,15 @@ impl<'tcx> GotocCtx<'tcx> {
                             ));
                             fields
                         }
-                        TagEncoding::Niche { dataful_variant, .. } => {
+                        TagEncoding::Niche { untagged_variant, .. } => {
                             // Enumerations with multiple variants and niche encoding have a
                             // specific format that can be used to optimize its layout and reduce
                             // memory consumption.
                             //
                             // These enumerations have one and only one variant with non-ZST
-                            // fields which is referred to by the `dataful_variant` index. Their
+                            // fields which is referred to by the `untagged_variant` index. Their
                             // final size and alignment is equal to the one from the
-                            // `dataful_variant`. All other variants either don't have any field
+                            // `untagged_variant`. All other variants either don't have any field
                             // or all fields types are ZST.
                             //
                             // Because of that, we can represent these enums as simple structures
@@ -1503,7 +1503,7 @@ impl<'tcx> GotocCtx<'tcx> {
                             tracing::trace!(
                                 ?name,
                                 ?variants,
-                                ?dataful_variant,
+                                ?untagged_variant,
                                 ?tag_encoding,
                                 ?subst,
                                 "codegen_enum: Niche"
