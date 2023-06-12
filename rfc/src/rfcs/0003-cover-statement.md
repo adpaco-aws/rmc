@@ -2,7 +2,7 @@
 - **Feature Request Issue:** <https://github.com/model-checking/kani/issues/696>
 - **RFC PR:** <https://github.com/model-checking/kani/pull/1906>
 - **Status:** Under Review
-- **Version:** 0
+- **Version:** 1
 - **Proof-of-concept:** *Optional field. If you have implemented a proof of concept, add a link here*
 
 ## Summary
@@ -84,7 +84,23 @@ fn foo() {
 }
 ```
 
-We can consider adding an option that would cause verification to fail if a cover property was unsatisfiable or unreachable, e.g. `--fail-uncoverable`.
+The `--fail-uncoverable` option will allow users to cause the verification to fail unless every cover property is satisfiable.
+This will be enforced through the `fail_uncoverable` global condition.
+
+#### `fail_uncoverable` as a Global Condition
+
+The `fail_uncoverable` global condition checks whether all cover properties are satisfiable or not.
+It will be be reported along any other enabled conditions in the `GLOBAL CONDITIONS` section:
+
+```
+GLOBAL CONDITIONS:
+ - `fail_uncoverable`: <status> (<reason>)
+ [...]
+```
+
+In this case, there are two possible statuses:
+ - `SUCCESS` (reason = `all cover statements were satisfied as expected`)
+ - `FAILURE` (reason = `encountered one or more cover statements which were not satisfied`)
 
 ### Inclusion in the Verification Summary
 
@@ -97,6 +113,7 @@ SUMMARY:
  ** 30 of 35 cover statements satisfied (1 unreachable) <--- NEW
  ```
 In this example, 5 of the 35 cover statements were found to be unsatisfiable, and one of those 5 is additionally unreachable.
+
 ### Interaction with Other Checks
 
 If one or more unwinding assertions fail or an unsupported construct is found to be reachable (which indicate an incomplete path exploration), and Kani found the condition to be unsatisfiable or unreachable, the result will be reported as `UNDETERMINED`.
