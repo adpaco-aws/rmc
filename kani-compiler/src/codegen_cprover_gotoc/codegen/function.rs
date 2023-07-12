@@ -85,7 +85,10 @@ impl<'tcx> GotocCtx<'tcx> {
 
             let loc = self.codegen_span(&mir.span);
             let stmts = self.current_fn_mut().extract_block();
-            let body = Stmt::block(stmts, loc);
+            let cover = self.codegen_cover(Expr::c_true(), "cover_experiment", Some(mir.span.clone()));
+            let mut new_stmts = stmts.clone();
+            new_stmts.insert(0, cover);
+            let body = Stmt::block(new_stmts, loc);
             self.symbol_table.update_fn_declaration_with_definition(&name, body);
         }
         self.reset_current_fn();
