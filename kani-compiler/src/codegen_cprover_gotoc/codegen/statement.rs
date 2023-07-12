@@ -30,7 +30,7 @@ impl<'tcx> GotocCtx<'tcx> {
         let _trace_span = debug_span!("CodegenStatement", statement = ?stmt).entered();
         debug!(?stmt, kind=?stmt.kind, "handling_statement");
         let location = self.codegen_span(&stmt.source_info.span);
-        match &stmt.kind {
+        let std_stmt = match &stmt.kind {
             StatementKind::Assign(box (l, r)) => {
                 let lty = self.place_ty(l);
                 let rty = self.rvalue_ty(r);
@@ -94,7 +94,15 @@ impl<'tcx> GotocCtx<'tcx> {
             | StatementKind::Coverage { .. }
             | StatementKind::ConstEvalCounter => Stmt::skip(location),
         }
-        .with_location(location)
+        .with_location(location);
+        let cover = self.codegen_cover(Expr::c_true(), "cover_experiment", Some(stmt.source_info.span.clone()));
+        if let Some(stmts) = std_stmt.get_stmts() {
+            let mut new_stmts = stmts.clone();
+            new_stmts.insert(0, cover);
+            Stmt::block(new_stmts, location)
+        } else {
+            Stmt::block(vec![cover, std_stmt], location)
+        }
     }
 
     /// Generate Goto-c for MIR [Terminator] statements.
