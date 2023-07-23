@@ -86,12 +86,13 @@ impl<'tcx> GotocCtx<'tcx> {
                     location,
                 )
             }
+            StatementKind::Coverage { .. } => if self.queries.check_coverage { self.codegen_coverage(stmt.source_info.span) }
+            else { Stmt::skip(location) }
             StatementKind::PlaceMention(_) => todo!(),
             StatementKind::FakeRead(_)
             | StatementKind::Retag(_, _)
             | StatementKind::AscribeUserType(_, _)
             | StatementKind::Nop
-            | StatementKind::Coverage { .. }
             | StatementKind::ConstEvalCounter => Stmt::skip(location),
         }
         .with_location(location)

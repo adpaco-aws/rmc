@@ -5,7 +5,7 @@
 //! custom MIR transformations.
 
 use crate::kani_middle::reachability::{collect_reachable_items, filter_crate_items};
-use crate::kani_middle::stubbing;
+use crate::kani_middle::{stubbing, coverage};
 use crate::kani_queries::QueryDb;
 use rustc_hir::def_id::{DefId, LocalDefId};
 use rustc_interface;
@@ -14,6 +14,8 @@ use rustc_middle::{
     query::{queries, ExternProviders, Providers},
     ty::TyCtxt,
 };
+// use rustc_mir_transform::coverage::InstrumentCoverage;
+// use rustc_middle::mir::coverage::InstrumentCoverage;
 
 /// Sets up rustc's query mechanism to apply Kani's custom queries to code from
 /// the present crate.
@@ -55,7 +57,8 @@ fn run_kani_mir_passes<'tcx>(
     body: &'tcx Body<'tcx>,
 ) -> &'tcx Body<'tcx> {
     tracing::debug!(?def_id, "Run Kani transformation passes");
-    stubbing::transform(tcx, def_id, body)
+    let stubbed_body = stubbing::transform(tcx, def_id, body);
+    coverage::run_pass(tcx, body)
 }
 
 /// Runs a reachability analysis before running the default

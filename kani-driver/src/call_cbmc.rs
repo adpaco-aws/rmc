@@ -318,9 +318,9 @@ impl VerificationResult {
                 let show_checks = matches!(output_format, OutputFormat::Regular);
 
                 // If --coverage is on, return the post-processed results
-                if coverage_mode {
-                    return format_result_coverage(results);
-                }
+                // if coverage_mode {
+                //     return format_result_coverage(results);
+                // }
 
                 match output_format {
                     OutputFormat::Regular | OutputFormat::Terse => {

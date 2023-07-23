@@ -30,11 +30,13 @@ use self::attributes::{check_attributes, check_unstable_features};
 pub mod analysis;
 pub mod attributes;
 pub mod coercion;
+pub mod coverage;
 pub mod metadata;
 pub mod provide;
 pub mod reachability;
 pub mod resolve;
 pub mod stubbing;
+
 
 /// Check that all crate items are supported and there's no misconfiguration.
 /// This method will exhaustively print any error / warning and it will abort at the end if any
