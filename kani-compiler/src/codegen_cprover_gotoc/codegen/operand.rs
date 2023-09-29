@@ -309,6 +309,7 @@ impl<'tcx> GotocCtx<'tcx> {
                     let overall_type = self.codegen_ty(ty);
                     // If there is no field, then it's just a ZST.
                     if variant.fields.is_empty() {
+                        assert!(false);
                         Expr::struct_expr_from_values(overall_type, vec![], &self.symbol_table)
                     // Otherwise, there is at least one field associated with the scalar data.
                     // Any additional fields correspond to ZSTs.
