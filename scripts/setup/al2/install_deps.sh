@@ -6,6 +6,7 @@ set -eu
 
 # Dependencies.
 DEPS=(
+  cmake
   cmake3
   git
   openssl-devel
