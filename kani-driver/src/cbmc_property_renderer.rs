@@ -464,6 +464,12 @@ fn format_result_coverage(properties: &[Property]) -> String {
     let mut formatted_output = String::new();
     formatted_output.push_str("\nCoverage Results:\n");
 
+    println!("=== DEBUG COV INFO ===");
+    for prop in properties {
+        println!("{:?} {:?} {}", prop.description, prop.status, prop.source_location);
+    }
+    println!("=== DEBUG COV INFO ===");
+
     let mut coverage_results: BTreeMap<String, BTreeMap<usize, CoverageStatus>> =
         BTreeMap::default();
     for prop in properties {

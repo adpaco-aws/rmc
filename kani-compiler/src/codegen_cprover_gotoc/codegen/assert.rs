@@ -154,10 +154,15 @@ impl<'tcx> GotocCtx<'tcx> {
         // unless it is run with '--cover cover' (see
         // https://github.com/diffblue/cbmc/issues/6613). So for now use
         // `assert(false)`.
+        // let parent = if let Some(par) = span.parent() {
+        //     format!("{:?}", par.)
+        // } else { "NONE".to_string() };
+        // debug!("add cover statement for span: {:?}", span);
+        let msg: &str = &format!("code coverage for span {:?}", span);
         self.codegen_assert(
             Expr::bool_false(),
             PropertyClass::CodeCoverage,
-            "code coverage for location",
+            msg,
             loc,
         )
     }
