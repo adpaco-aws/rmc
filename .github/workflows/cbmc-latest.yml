@@ -70,7 +70,7 @@ jobs:
 
       - name: Build Kani using release mode
         working-directory: ./kani
-        run: cargo build-dev -- --release
+        run: cargo build-dev
 
       - name: Checkout CBMC under "cbmc"
         uses: actions/checkout@v4
