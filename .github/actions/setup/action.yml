@@ -10,7 +10,8 @@ inputs:
     description: Path to Kani's root directory
     required: false
     default: '.'
-  install_cbmc: Whether to install CBMC or not
+  install_cbmc:
+    description: Whether to install CBMC or not
     required: false
     default: true
 
