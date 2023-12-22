@@ -10,6 +10,10 @@ inputs:
     description: Path to Kani's root directory
     required: false
     default: '.'
+  install_cbmc: Whether to install CBMC or not
+    required: false
+    default: true
+
 runs:
   using: composite
   steps:
@@ -30,7 +34,13 @@ runs:
         shell: bash
 
       - name: Install dependencies
+        if: inputs.install_cbmc
         run: cd ${{ inputs.kani_dir }} && ./scripts/setup/${{ inputs.os }}/install_deps.sh
+        shell: bash
+
+      - name: Install dependencies, excluding CBMC
+        if: ${{ ! inputs.install_cbmc }}
+        run: cd ${{ inputs.kani_dir }} && ./scripts/setup/${{ inputs.os }}/install_deps.sh --no-cbmc
         shell: bash
 
       - name: Update submodules

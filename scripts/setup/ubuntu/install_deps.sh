@@ -55,7 +55,11 @@ fi
 # Get the directory containing this script
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-${SCRIPT_DIR}/install_cbmc.sh
 ${SCRIPT_DIR}/install_viewer.sh
 # The Kissat installation script is platform-independent, so is placed one level up
 ${SCRIPT_DIR}/../install_kissat.sh
+if [[ $# -eq 1 && $1 == "--no-cbmc" ]]; then
+  exit 0
+else
+  ${SCRIPT_DIR}/install_cbmc.sh
+fi
