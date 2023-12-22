@@ -35,12 +35,6 @@ runs:
         shell: bash
 
       - name: Install dependencies
-        if: inputs.install_cbmc
-        run: cd ${{ inputs.kani_dir }} && ./scripts/setup/${{ inputs.os }}/install_deps.sh
-        shell: bash
-
-      - name: Install dependencies, excluding CBMC
-        if: ${{ ! inputs.install_cbmc }}
         run: cd ${{ inputs.kani_dir }} && ./scripts/setup/${{ inputs.os }}/install_deps.sh --no-cbmc
         shell: bash
 
