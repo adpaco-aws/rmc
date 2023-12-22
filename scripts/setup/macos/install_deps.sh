@@ -26,6 +26,7 @@ ${SCRIPT_DIR}/install_viewer.sh
 # The Kissat installation script is platform-independent, so is placed one level up
 ${SCRIPT_DIR}/../install_kissat.sh
 if [[ $# -eq 1 && $1 == "--no-cbmc" ]]; then
+  echo "Skipping installation of CBMC"
   exit 0
 else
   ${SCRIPT_DIR}/install_cbmc.sh
