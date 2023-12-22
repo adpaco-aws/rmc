@@ -49,6 +49,8 @@ jobs:
           make -C src -j4 MINISAT2=../../minisat-2.2.1 CADICAL=../../cadical
           # Prepend the bin directory to $PATH
           echo "${GITHUB_WORKSPACE}/cbmc/build/bin" >> $GITHUB_PATH
+          which cbmc
+          cbmc --version
 
       - name: Execute Kani regressions
         working-directory: ./kani
@@ -85,6 +87,8 @@ jobs:
           cmake --build build -- -j 4
           # Prepend the bin directory to $PATH
           echo "${GITHUB_WORKSPACE}/cbmc/build/bin" >> $GITHUB_PATH
+          which cbmc
+          cbmc --version
 
       - name: Execute Kani performance tests
         working-directory: ./kani
