@@ -26,6 +26,8 @@ impl<'tcx> GotocCtx<'tcx> {
             0 => {
                 let term = &bbd.terminator;
                 let tcode = self.codegen_terminator(term);
+                let loc = self.codegen_span_stable(term.span);
+                debug!(?loc, "codegen_block - term_loc");
                 // When checking coverage, the `coverage` check should be
                 // labelled instead.
                 if check_coverage {
@@ -40,6 +42,8 @@ impl<'tcx> GotocCtx<'tcx> {
             _ => {
                 let stmt = &bbd.statements[0];
                 let scode = self.codegen_statement(stmt);
+                let loc = self.codegen_span_stable(stmt.span);
+                debug!(?loc, "codegen_block - term_loc");
                 // When checking coverage, the `coverage` check should be
                 // labelled instead.
                 if check_coverage {
@@ -58,6 +62,8 @@ impl<'tcx> GotocCtx<'tcx> {
                         self.current_fn_mut().push_onto_block(cover);
                     }
                     let stmt = self.codegen_statement(s);
+                    let loc = self.codegen_span_stable(s.span);
+                    debug!(?loc, "codegen_block - term_loc");
                     self.current_fn_mut().push_onto_block(stmt);
                 }
                 let term = &bbd.terminator;
@@ -67,6 +73,8 @@ impl<'tcx> GotocCtx<'tcx> {
                     self.current_fn_mut().push_onto_block(cover);
                 }
                 let tcode = self.codegen_terminator(term);
+                let loc = self.codegen_span_stable(term.span);
+                debug!(?loc, "codegen_block - term_loc");
                 self.current_fn_mut().push_onto_block(tcode);
             }
         }
