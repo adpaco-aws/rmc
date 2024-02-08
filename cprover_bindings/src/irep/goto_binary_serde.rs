@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 //! GOTO binary serializer.
 
+use tracing::debug;
+
 use crate::irep::{Irep, IrepId, Symbol, SymbolTable};
 use crate::{InternString, InternedString};
 use std::collections::HashMap;
@@ -23,6 +25,8 @@ pub fn write_goto_binary_file(filename: &Path, source: &crate::goto_program::Sym
     let mut writer = BufWriter::new(out_file);
     let mut serializer = GotoBinarySerializer::new(&mut writer);
     let irep_symbol_table = &source.to_irep();
+    debug!("SYMTAB: {irep_symbol_table:?}");
+    // debug!("SYMTAB: {source:?}");
     serializer.write_file(irep_symbol_table);
 }
 

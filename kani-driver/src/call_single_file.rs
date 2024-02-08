@@ -117,6 +117,10 @@ impl KaniSession {
         flags.extend_from_slice(
             &[
                 "-C",
+                "instrument-coverage",
+                "-Z",
+                "no-profiler-runtime",
+                "-C",
                 "panic=abort",
                 "-C",
                 "symbol-mangling-version=v0",

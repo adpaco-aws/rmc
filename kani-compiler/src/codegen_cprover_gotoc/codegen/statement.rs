@@ -95,13 +95,18 @@ impl<'tcx> GotocCtx<'tcx> {
                     "assumption failed",
                     location,
                 )
-            }
+            },
+            StatementKind::Coverage(opaque) => {
+            debug!(?opaque, "StatementKind::Coverage Opaque");
+            self.codegen_coverage(stmt.span)
+            // let coverage_stmt = self.codegen_coverage(stmt.span);
+            // Stmt::block(vec![coverage_stmt], location)
+            },
             StatementKind::PlaceMention(_) => todo!(),
             StatementKind::FakeRead(..)
             | StatementKind::Retag(_, _)
             | StatementKind::AscribeUserType { .. }
             | StatementKind::Nop
-            | StatementKind::Coverage { .. }
             | StatementKind::ConstEvalCounter => Stmt::skip(location),
         }
         .with_location(location)
