@@ -30,7 +30,7 @@ impl<'tcx> GotocCtx<'tcx> {
                 // labelled instead.
                 if check_coverage {
                     let span = term.span;
-                    let cover = self.codegen_coverage(span);
+                    let cover = self.codegen_coverage("", span);
                     self.current_fn_mut().push_onto_block(cover.with_label(label));
                     self.current_fn_mut().push_onto_block(tcode);
                 } else {
@@ -44,7 +44,7 @@ impl<'tcx> GotocCtx<'tcx> {
                 // labelled instead.
                 if check_coverage {
                     let span = stmt.span;
-                    let cover = self.codegen_coverage(span);
+                    let cover = self.codegen_coverage("", span);
                     self.current_fn_mut().push_onto_block(cover.with_label(label));
                     self.current_fn_mut().push_onto_block(scode);
                 } else {
@@ -54,7 +54,7 @@ impl<'tcx> GotocCtx<'tcx> {
                 for s in &bbd.statements[1..] {
                     if check_coverage {
                         let span = s.span;
-                        let cover = self.codegen_coverage(span);
+                        let cover = self.codegen_coverage("", span);
                         self.current_fn_mut().push_onto_block(cover);
                     }
                     let stmt = self.codegen_statement(s);
@@ -63,7 +63,7 @@ impl<'tcx> GotocCtx<'tcx> {
                 let term = &bbd.terminator;
                 if check_coverage {
                     let span = term.span;
-                    let cover = self.codegen_coverage(span);
+                    let cover = self.codegen_coverage("", span);
                     self.current_fn_mut().push_onto_block(cover);
                 }
                 let tcode = self.codegen_terminator(term);
