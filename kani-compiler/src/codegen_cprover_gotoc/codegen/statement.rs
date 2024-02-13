@@ -93,7 +93,7 @@ impl<'tcx> GotocCtx<'tcx> {
                     "assumption failed",
                     location,
                 )
-            },
+            }
             StatementKind::Coverage(cov) => {
                 // debug!(?opaque, "StatementKind::Coverage Opaque");
                 // self.codegen_coverage(stmt.span)
@@ -104,7 +104,7 @@ impl<'tcx> GotocCtx<'tcx> {
                 } else {
                     Stmt::skip(location)
                 }
-            },
+            }
             StatementKind::PlaceMention(_) => todo!(),
             StatementKind::FakeRead(..)
             | StatementKind::Retag(_, _)

@@ -155,12 +155,7 @@ impl<'tcx> GotocCtx<'tcx> {
         // https://github.com/diffblue/cbmc/issues/6613). So for now use
         // `assert(false)`.
         let fmt = format!("{info} - {span:?}");
-        self.codegen_assert(
-            Expr::bool_false(),
-            PropertyClass::CodeCoverage,
-            &fmt,
-            loc,
-        )
+        self.codegen_assert(Expr::bool_false(), PropertyClass::CodeCoverage, &fmt, loc)
     }
 
     // The above represent the basic operations we can perform w.r.t. assert/assume/cover
