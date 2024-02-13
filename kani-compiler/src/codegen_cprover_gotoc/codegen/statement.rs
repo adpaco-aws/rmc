@@ -96,11 +96,16 @@ impl<'tcx> GotocCtx<'tcx> {
                     location,
                 )
             },
-            StatementKind::Coverage(opaque) => {
-            debug!(?opaque, "StatementKind::Coverage Opaque");
-            self.codegen_coverage(stmt.span)
-            // let coverage_stmt = self.codegen_coverage(stmt.span);
-            // Stmt::block(vec![coverage_stmt], location)
+            StatementKind::Coverage(cov) => {
+                // debug!(?opaque, "StatementKind::Coverage Opaque");
+                // self.codegen_coverage(stmt.span)
+                let cov_info = format!("{cov:?}");
+                if cov_info.starts_with("Coverage { kind: CounterIncrement(") {
+                    let coverage_stmt = self.codegen_coverage(&cov_info, stmt.span);
+                    Stmt::block(vec![coverage_stmt], location)
+                } else {
+                    Stmt::skip(location)
+                }
             },
             StatementKind::PlaceMention(_) => todo!(),
             StatementKind::FakeRead(..)
