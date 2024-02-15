@@ -29,44 +29,44 @@ impl<'tcx> GotocCtx<'tcx> {
                 let tcode = self.codegen_terminator(term);
                 // When checking coverage, the `coverage` check should be
                 // labelled instead.
-                if check_coverage {
-                    let span = term.span;
-                    let cover = self.codegen_coverage("", span);
-                    self.current_fn_mut().push_onto_block(cover.with_label(label));
-                    self.current_fn_mut().push_onto_block(tcode);
-                } else {
+                // if check_coverage {
+                    // let span = term.span;
+                    // let cover = self.codegen_coverage("", span);
+                    // self.current_fn_mut().push_onto_block(cover.with_label(label));
+                    // self.current_fn_mut().push_onto_block(tcode);
+                // } else {
                     self.current_fn_mut().push_onto_block(tcode.with_label(label));
-                }
+                // }
             }
             _ => {
                 let stmt = &bbd.statements[0];
                 let scode = self.codegen_statement(stmt);
                 // When checking coverage, the `coverage` check should be
                 // labelled instead.
-                if check_coverage {
-                    let span = stmt.span;
-                    let cover = self.codegen_coverage("", span);
-                    self.current_fn_mut().push_onto_block(cover.with_label(label));
-                    self.current_fn_mut().push_onto_block(scode);
-                } else {
+                // if check_coverage {
+                    // let span = stmt.span;
+                    // let cover = self.codegen_coverage("", span);
+                    // self.current_fn_mut().push_onto_block(cover.with_label(label));
+                    // self.current_fn_mut().push_onto_block(scode);
+                // } else {
                     self.current_fn_mut().push_onto_block(scode.with_label(label));
-                }
+                // }
 
                 for s in &bbd.statements[1..] {
-                    if check_coverage {
-                        let span = s.span;
-                        let cover = self.codegen_coverage("", span);
-                        self.current_fn_mut().push_onto_block(cover);
-                    }
+                    // if check_coverage {
+                        // let span = s.span;
+                        // let cover = self.codegen_coverage("", span);
+                        // self.current_fn_mut().push_onto_block(cover);
+                    // }
                     let stmt = self.codegen_statement(s);
                     self.current_fn_mut().push_onto_block(stmt);
                 }
                 let term = &bbd.terminator;
-                if check_coverage {
-                    let span = term.span;
-                    let cover = self.codegen_coverage("", span);
-                    self.current_fn_mut().push_onto_block(cover);
-                }
+                // if check_coverage {
+                    // let span = term.span;
+                    // let cover = self.codegen_coverage("", span);
+                    // self.current_fn_mut().push_onto_block(cover);
+                // }
                 let tcode = self.codegen_terminator(term);
                 self.current_fn_mut().push_onto_block(tcode);
             }
