@@ -9,6 +9,7 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use rustc_demangle::demangle;
 use std::collections::{BTreeMap, HashMap};
+use std::sync::OnceLock;
 use strum_macros::{AsRefStr, Display};
 
 type CbmcAltDescriptions = HashMap<&'static str, Vec<(&'static str, Option<&'static str>)>>;
@@ -446,7 +447,8 @@ pub fn format_coverage(
     let verification_output =
         format_result(&non_coverage_checks, status, should_panic, failed_properties, show_checks);
     let coverage_output = format_result_coverage(&coverage_checks);
-    let result = format!("{}\n{}", verification_output, coverage_output);
+    let new_coverage_output = format_result_new_coverage(&coverage_checks);
+    let result = format!("{}\n{}\n{}", verification_output, coverage_output, new_coverage_output);
 
     result
 }
@@ -494,6 +496,64 @@ fn format_result_coverage(properties: &[Property]) -> String {
         formatted_output.push('\n');
     }
 
+    formatted_output
+}
+
+fn format_result_new_coverage(properties: &[Property]) -> String {
+    let mut formatted_output = String::new();
+    formatted_output.push_str("\nCoverage Results (NEW):\n");
+
+    let mut coverage_results: BTreeMap<String, Vec<(usize, CheckStatus)>> =
+        BTreeMap::default();
+    
+    let re = {
+        static RE: OnceLock<Regex> = OnceLock::new();
+        RE.get_or_init(|| {
+            Regex::new(
+                r#"^Coverage \{ kind: CounterIncrement\((?<counter_num>[0-9]+)\) \}"#,
+            )
+            .unwrap()
+        })
+    };
+    for prop in properties {
+        // println!("{prop:?}");
+        // let src = prop.source_location.clone();
+        // we expect these to always refer to a function
+        let function = prop.source_location.function.as_ref().unwrap().clone();
+        let captures = re.captures(&prop.description).unwrap();
+        let name_hash = &captures["counter_num"];
+        let status = prop.status;
+        let new_str = format!("{function} {name_hash} {status}\n");
+        formatted_output.push_str(&new_str);
+        // let file_entries = coverage_results.entry(|v| v.push().or_default();
+        // let check_status = if prop.status == CheckStatus::Covered {
+        //     CoverageStatus::Full
+        // } else {
+        //     CoverageStatus::None
+        // };
+
+        
+        // Create Map<file, Map<line, status>>
+    //     file_entries
+    //         .entry(src.line.unwrap().parse().unwrap())
+    //         .and_modify(|line_status| {
+    //             if *line_status != check_status {
+    //                 *line_status = CoverageStatus::Partial
+    //             }
+    //         })
+    //         .or_insert(check_status);
+    // }
+
+    // Create formatted string that is returned to the user as output
+    // for (file, checks) in coverage_results.iter() {
+    //     for (line_number, coverage_status) in checks {
+    //         formatted_output.push_str(&format!("{}, {}, {}\n", file, line_number, coverage_status));
+    //     }
+    //     formatted_output.push('\n');
+    // }
+
+    }
+    println!("{coverage_results:?}");
     formatted_output
 }
 
