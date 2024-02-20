@@ -510,20 +510,21 @@ fn format_result_new_coverage(properties: &[Property]) -> String {
         static RE: OnceLock<Regex> = OnceLock::new();
         RE.get_or_init(|| {
             Regex::new(
-                r#"^Coverage \{ kind: CounterIncrement\((?<counter_num>[0-9]+)\) \}"#,
+                r#"^Coverage \{ kind: CounterIncrement\((?<counter_num>[0-9]+)\) \} (?<func_name>[_\d\w]+)"#,
             )
             .unwrap()
         })
     };
     for prop in properties {
-        // println!("{prop:?}");
+        println!("{prop:?}");
         // let src = prop.source_location.clone();
         // we expect these to always refer to a function
-        let function = prop.source_location.function.as_ref().unwrap().clone();
+        // let function = prop.source_location.function.as_ref().unwrap().clone(); 
         let captures = re.captures(&prop.description).unwrap();
-        let name_hash = &captures["counter_num"];
+        let function = demangle(&captures["func_name"]);
+        let counter_num = &captures["counter_num"];
         let status = prop.status;
-        let new_str = format!("{function} {name_hash} {status}\n");
+        let new_str = format!("{function}, {counter_num}, {status}\n");
         formatted_output.push_str(&new_str);
         // let file_entries = coverage_results.entry(|v| v.push().or_default();
         // let check_status = if prop.status == CheckStatus::Covered {
