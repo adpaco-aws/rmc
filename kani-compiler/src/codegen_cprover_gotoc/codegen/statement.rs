@@ -3,6 +3,7 @@
 use super::typ::TypeExt;
 use super::typ::FN_RETURN_VOID_VAR_NAME;
 use super::{bb_label, PropertyClass};
+use crate::codegen_cprover_gotoc::codegen::function;
 use crate::codegen_cprover_gotoc::{GotocCtx, VtableCtx};
 use crate::unwrap_or_return_codegen_unimplemented_stmt;
 use cbmc::goto_program::{Expr, Location, Stmt, Type};
@@ -99,7 +100,8 @@ impl<'tcx> GotocCtx<'tcx> {
             StatementKind::Coverage(cov) => {
                 // debug!(?opaque, "StatementKind::Coverage Opaque");
                 // self.codegen_coverage(stmt.span)
-                let cov_info = format!("{cov:?}");
+                let fun = self.current_fn().name();
+                let cov_info = format!("{cov:?} {fun}");
                 if cov_info.starts_with("Coverage { kind: CounterIncrement(") {
                     let coverage_stmt = self.codegen_coverage(&cov_info, stmt.span);
                     Stmt::block(vec![coverage_stmt], location)
