@@ -524,7 +524,7 @@ fn format_result_new_coverage(properties: &[Property]) -> String {
         let function = demangle(&captures["func_name"]);
         let counter_num = &captures["counter_num"];
         let status = prop.status;
-        let new_str = format!("{function}, {counter_num}, {status}\n");
+        let new_str = format!("### {function}, {counter_num}, {status}\n");
         formatted_output.push_str(&new_str);
         // let file_entries = coverage_results.entry(|v| v.push().or_default();
         // let check_status = if prop.status == CheckStatus::Covered {
