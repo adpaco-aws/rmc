@@ -20,7 +20,6 @@ impl<'tcx> GotocCtx<'tcx> {
     pub fn codegen_block(&mut self, bb: BasicBlockIdx, bbd: &BasicBlock) {
         debug!(?bb, "codegen_block");
         let label = bb_label(bb);
-        let check_coverage = self.queries.args().check_coverage;
         // the first statement should be labelled. if there is no statements, then the
         // terminator should be labelled.
         match bbd.statements.len() {
