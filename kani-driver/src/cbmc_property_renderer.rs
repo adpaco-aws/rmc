@@ -503,7 +503,7 @@ fn format_result_new_coverage(properties: &[Property]) -> String {
     let mut formatted_output = String::new();
     formatted_output.push_str("\nCoverage Results (NEW):\n");
 
-    let mut coverage_results: BTreeMap<String, Vec<(usize, CheckStatus)>> =
+    let coverage_results: BTreeMap<String, Vec<(usize, CheckStatus)>> =
         BTreeMap::default();
     
     let re = {

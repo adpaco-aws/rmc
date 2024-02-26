@@ -3,7 +3,6 @@
 use super::typ::TypeExt;
 use super::typ::FN_RETURN_VOID_VAR_NAME;
 use super::{bb_label, PropertyClass};
-use crate::codegen_cprover_gotoc::codegen::function;
 use crate::codegen_cprover_gotoc::{GotocCtx, VtableCtx};
 use crate::unwrap_or_return_codegen_unimplemented_stmt;
 use cbmc::goto_program::{Expr, Location, Stmt, Type};

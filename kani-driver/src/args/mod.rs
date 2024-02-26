@@ -6,10 +6,12 @@ pub mod assess_args;
 pub mod cargo;
 pub mod common;
 pub mod playback_args;
+pub mod coverage_args;
 
 pub use assess_args::*;
 
 use self::common::*;
+use self::coverage_args::CargoCoverageArgs;
 use crate::args::cargo::CargoTargetArgs;
 use crate::util::warning;
 use cargo::CargoCommonArgs;
@@ -112,6 +114,9 @@ pub enum CargoKaniSubcommand {
 
     /// Execute concrete playback testcases of a local package.
     Playback(Box<playback_args::CargoPlaybackArgs>),
+
+    /// TBD
+    Coverage(Box<coverage_args::CargoCoverageArgs>),
 }
 
 // Common arguments for invoking Kani for verification purpose. This gets put into KaniContext,
@@ -478,6 +483,7 @@ impl ValidateArgs for CargoKaniSubcommand {
         match self {
             // Assess doesn't implement validation yet.
             CargoKaniSubcommand::Assess(_) => Ok(()),
+            CargoKaniSubcommand::Coverage(_) => Ok(()),
             CargoKaniSubcommand::Playback(playback) => playback.validate(),
         }
     }
