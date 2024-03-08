@@ -81,7 +81,7 @@ fn cargokani_main(input_args: Vec<OsString>) -> Result<()> {
             return playback_cargo(*args);
         }
         Some(CargoKaniSubcommand::Coverage(args)) => {
-            return coverage_cargo(*args);
+            return coverage_cargo(session, *args);
         }
         None => {}
     }
