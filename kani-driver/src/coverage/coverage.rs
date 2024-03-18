@@ -10,6 +10,7 @@ use crate::OsString;
 use crate::call_single_file::base_rustc_flags;
 use crate::session::lib_playback_folder;
 use crate::session::InstallType;
+use crate::coverage::cov_mappings;
 
 // Copyright Kani Contributors
 // SPDX-License-Identifier: Apache-2.0 OR MIT
@@ -19,15 +20,14 @@ pub fn coverage_cargo(mut session: KaniSession, args: CargoCoverageArgs) -> Resu
     let harnesses = session.determine_targets(&project.get_all_harnesses())?;
     debug!(n = harnesses.len(), ?harnesses, "coverage_cargo");
 
+    // Read coverage mappings
+    let cov_mappings = cov_mappings::read_cov_mappings(&project);
+
     // Verification
     let runner = harness_runner::HarnessRunner { sess: &session, project: &project };
     let results = runner.check_all_harnesses(&harnesses)?;
 
-    // Now we should save the results
-    // And start the regular compilation
-
-    let install = InstallType::new()?;
-    let _ = cargo_prof(&install, args);
+    // More to come later
     Ok(())
 }
 
@@ -72,7 +72,7 @@ fn cargo_prof(install: &InstallType, args: CargoCoverageArgs) -> Result<()> {
     // if !args.playback.test_args.is_empty() {
     //     cargo_args.push("--".into());
     //     cargo_args.extend(args.playback.test_args.iter().map(|arg| arg.into()));
-    // }`§`
+    // }
 
     // Arguments that will only be passed to the target package.
     let mut cmd = Command::new("cargo");

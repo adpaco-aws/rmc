@@ -6,6 +6,7 @@ use crate::call_cbmc::{FailedProperties, VerificationStatus};
 use crate::cbmc_output_parser::{CheckStatus, ParserItem, Property, TraceItem};
 use console::style;
 use once_cell::sync::Lazy;
+use rayon::iter::split;
 use regex::Regex;
 use rustc_demangle::demangle;
 use std::collections::{BTreeMap, HashMap};
@@ -446,9 +447,8 @@ pub fn format_coverage(
 
     let verification_output =
         format_result(&non_coverage_checks, status, should_panic, failed_properties, show_checks);
-    let coverage_output = format_result_coverage(&coverage_checks);
     let new_coverage_output = format_result_new_coverage(&coverage_checks);
-    let result = format!("{}\n{}\n{}", verification_output, coverage_output, new_coverage_output);
+    let result = format!("{}\n{}", verification_output, new_coverage_output);
 
     result
 }
@@ -510,7 +510,17 @@ fn format_result_new_coverage(properties: &[Property]) -> String {
         static RE: OnceLock<Regex> = OnceLock::new();
         RE.get_or_init(|| {
             Regex::new(
-                r#"^Coverage \{ kind: CounterIncrement\((?<counter_num>[0-9]+)\) \} (?<func_name>[_\d\w]+)"#,
+                r#"^Coverage \{ kind: CounterIncrement\((?<counter_num>[0-9]+)\) \} (?<func_name>[_\d\w]+) - Span \{ id: (?<span_id>[0-9]+), repr: "(?<span>[^"]+)" \}"#,
+            )
+            .unwrap()
+        })
+    };
+
+    let re2 = {
+        static RE: OnceLock<Regex> = OnceLock::new();
+        RE.get_or_init(|| {
+            Regex::new(
+                r#"^Coverage \{ kind: ExpressionUsed\((?<expr_num>[0-9]+)\) \} (?<func_name>[_\d\w]+) - Span \{ id: (?<span_id>[0-9]+), repr: "(?<span>[^"]+)" \}"#,
             )
             .unwrap()
         })
@@ -519,13 +529,36 @@ fn format_result_new_coverage(properties: &[Property]) -> String {
         println!("{prop:?}");
         // let src = prop.source_location.clone();
         // we expect these to always refer to a function
-        // let function = prop.source_location.function.as_ref().unwrap().clone(); 
-        let captures = re.captures(&prop.description).unwrap();
-        let function = demangle(&captures["func_name"]);
-        let counter_num = &captures["counter_num"];
-        let status = prop.status;
-        let new_str = format!("### {function}, {counter_num}, {status}\n");
-        formatted_output.push_str(&new_str);
+        // let function = prop.source_location.function.as_ref().unwrap().clone();
+        if let Some(captures) = re.captures(&prop.description) {
+            let function = demangle(&captures["func_name"]);
+            let counter_num = &captures["counter_num"];
+            let status = prop.status;
+            // fn split_span(span: &str) -> (&str, &str, &str) {
+            //     let span_splits: Vec<&str> = span.split(":").collect();
+            //     assert_eq!(span_splits.len(), 5);
+            //     let file = span_splits[0];
+            //     let start_row = span_splits[1];
+            //     let start_col = span_splits[2];
+            //     let end_row = span_splits[3];
+            //     let end_col = span_splits[4];
+            //     (file, start_row, start_col, end_row, end_col)
+            // }
+            let span = &captures["span"];
+            // let (file, start_row, start_col, end_row, end_col) = split_span(span);
+            let new_str = format!("### {span}({function}), counter({counter_num}), {status}\n");
+
+            formatted_output.push_str(&new_str);
+        }
+
+        // if let Some(captures) = re2.captures(&prop.description) {
+        //     let function = demangle(&captures["func_name"]);
+        //     let expr_num = &captures["expr_num"];
+        //     let status = prop.status;
+        //     let new_str = format!("### {function}, expr({expr_num}), {status}\n");
+        //     formatted_output.push_str(&new_str);
+        // }
+
         // let file_entries = coverage_results.entry(|v| v.push().or_default();
         // let check_status = if prop.status == CheckStatus::Covered {
         //     CoverageStatus::Full

@@ -101,12 +101,11 @@ impl<'tcx> GotocCtx<'tcx> {
                 // self.codegen_coverage(stmt.span)
                 let fun = self.current_fn().name();
                 let cov_info = format!("{cov:?} {fun}");
-                if cov_info.starts_with("Coverage { kind: CounterIncrement(") {
-                    let coverage_stmt = self.codegen_coverage(&cov_info, stmt.span);
-                    Stmt::block(vec![coverage_stmt], location)
-                } else {
-                    Stmt::skip(location)
-                }
+
+                // if cov_info.starts_with("Coverage { kind: CounterIncrement(") {
+                let coverage_stmt = self.codegen_coverage(&cov_info, stmt.span);
+                // 
+                Stmt::block(vec![coverage_stmt], location)
             }
             StatementKind::PlaceMention(_) => todo!(),
             StatementKind::FakeRead(..)
