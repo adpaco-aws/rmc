@@ -316,3 +316,39 @@ impl<'tcx> FnAbiOfHelpers<'tcx> for CompilerHelpers<'tcx> {
         }
     }
 }
+
+
+// pub mod rustc_smir {
+
+//     type CoverageOpaque = smir::Opaque;
+
+//     /// Wrapper since we don't have a structured coverage.
+//     pub fn coverage_opaque_span(
+//         tcx: TyCtxt,
+//         coverage_opaque: CoverageOpaque,
+//         instance: Instance,
+//     ) -> Span {
+//         coverage_span(parse_coverage(coverage_opaque, instance))
+//     }
+
+//     /// Function that should be the internal implementation of opaque
+//     pub fn coverage_span(tcx: TyCtxt, coverage: Coverage, instance: Instance) -> Span {
+//         let instance_def = rustc_internal(instance.def);
+//         let body = tcx.def_body(instance_def);
+//         match coverage {
+//             Expression(id) => {
+//                 todo!("get from body expressions")
+//             }
+//             Cover(id) => {
+//                 todo!("get from mapping")
+//             }
+//         }
+//     }
+// }
+
+// pub mod stable_mir {
+//     enum Coverage {
+//         Expression(ExpressionId),
+//         Cover(CoverId),
+//     }
+// }

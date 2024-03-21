@@ -6,7 +6,6 @@ use crate::call_cbmc::{FailedProperties, VerificationStatus};
 use crate::cbmc_output_parser::{CheckStatus, ParserItem, Property, TraceItem};
 use console::style;
 use once_cell::sync::Lazy;
-use rayon::iter::split;
 use regex::Regex;
 use rustc_demangle::demangle;
 use std::collections::{BTreeMap, HashMap};
@@ -506,11 +505,20 @@ fn format_result_new_coverage(properties: &[Property]) -> String {
     let coverage_results: BTreeMap<String, Vec<(usize, CheckStatus)>> =
         BTreeMap::default();
     
+    // let re = {
+    //     static RE: OnceLock<Regex> = OnceLock::new();
+    //     RE.get_or_init(|| {
+    //         Regex::new(
+    //             r#"^Coverage \{ kind: CounterIncrement\((?<counter_num>[0-9]+)\) \} (?<func_name>[_\d\w]+) - Span \{ id: (?<span_id>[0-9]+), repr: "(?<span>[^"]+)" \}"#,
+    //         )
+    //         .unwrap()
+    //     })
+    // };
     let re = {
         static RE: OnceLock<Regex> = OnceLock::new();
         RE.get_or_init(|| {
             Regex::new(
-                r#"^Coverage \{ kind: CounterIncrement\((?<counter_num>[0-9]+)\) \} (?<func_name>[_\d\w]+) - Span \{ id: (?<span_id>[0-9]+), repr: "(?<span>[^"]+)" \}"#,
+                r#"^Coverage \{ kind: CounterIncrement\((?<counter_num>[0-9]+)\) \} (?<func_name>[_\d\w]+) - (?<span>.+)"#,
             )
             .unwrap()
         })
@@ -520,7 +528,7 @@ fn format_result_new_coverage(properties: &[Property]) -> String {
         static RE: OnceLock<Regex> = OnceLock::new();
         RE.get_or_init(|| {
             Regex::new(
-                r#"^Coverage \{ kind: ExpressionUsed\((?<expr_num>[0-9]+)\) \} (?<func_name>[_\d\w]+) - Span \{ id: (?<span_id>[0-9]+), repr: "(?<span>[^"]+)" \}"#,
+                r#"^Coverage \{ kind: ExpressionUsed\((?<expr_num>[0-9]+)\) \} (?<func_name>[_\d\w]+) - (?<span>.+)"#,
             )
             .unwrap()
         })
@@ -551,41 +559,14 @@ fn format_result_new_coverage(properties: &[Property]) -> String {
             formatted_output.push_str(&new_str);
         }
 
-        // if let Some(captures) = re2.captures(&prop.description) {
-        //     let function = demangle(&captures["func_name"]);
-        //     let expr_num = &captures["expr_num"];
-        //     let status = prop.status;
-        //     let new_str = format!("### {function}, expr({expr_num}), {status}\n");
-        //     formatted_output.push_str(&new_str);
-        // }
-
-        // let file_entries = coverage_results.entry(|v| v.push().or_default();
-        // let check_status = if prop.status == CheckStatus::Covered {
-        //     CoverageStatus::Full
-        // } else {
-        //     CoverageStatus::None
-        // };
-
-        
-        // Create Map<file, Map<line, status>>
-    //     file_entries
-    //         .entry(src.line.unwrap().parse().unwrap())
-    //         .and_modify(|line_status| {
-    //             if *line_status != check_status {
-    //                 *line_status = CoverageStatus::Partial
-    //             }
-    //         })
-    //         .or_insert(check_status);
-    // }
-
-    // Create formatted string that is returned to the user as output
-    // for (file, checks) in coverage_results.iter() {
-    //     for (line_number, coverage_status) in checks {
-    //         formatted_output.push_str(&format!("{}, {}, {}\n", file, line_number, coverage_status));
-    //     }
-    //     formatted_output.push('\n');
-    // }
-
+        if let Some(captures) = re2.captures(&prop.description) {
+            let function = demangle(&captures["func_name"]);
+            let expr_num = &captures["expr_num"];
+            let status = prop.status;
+            let span = &captures["span"];
+            let new_str = format!("### {span}({function}), expr({expr_num}), {status}\n");
+            formatted_output.push_str(&new_str);
+        }
     }
     println!("{coverage_results:?}");
     formatted_output

@@ -216,3 +216,74 @@ impl<'tcx> GotocCtx<'tcx> {
         self.reset_current_fn();
     }
 }
+
+pub mod rustc_smir {
+    use rustc_middle::mir::coverage::{CounterId, CovTerm};
+    use rustc_middle::ty::TyCtxt;
+    use rustc_middle::mir::coverage::CovTerm::{Expression, Counter, Zero};
+    use stable_mir::mir::mono::Instance;
+    // maybe not this span
+    use stable_mir::ty::Span;
+    use stable_mir::Opaque;
+    use rustc_middle::mir::coverage::ExpressionId;
+    use rustc_middle::mir::coverage::MappingKind::Code;
+    use crate::stable_mir::CrateDef;
+    use rustc_middle::mir::coverage::CodeRegion;
+
+    type CoverageOpaque = stable_mir::Opaque;
+
+    /// Wrapper since we don't have a structured coverage.
+    pub fn coverage_opaque_span(
+        tcx: TyCtxt,
+        coverage_opaque: CoverageOpaque,
+        instance: Instance,
+    ) -> Option<CodeRegion> {
+        coverage_span(tcx, parse_coverage(coverage_opaque), instance)
+    }
+
+    /// Function that should be the internal implementation of opaque
+    pub fn coverage_span<'tcx>(tcx: TyCtxt<'tcx>, coverage: CovTerm, instance: Instance) -> Option<CodeRegion> {
+        let instance_def = rustc_smir::rustc_internal::internal(tcx, instance.def.def_id());
+        let body = tcx.instance_mir(rustc_middle::ty::InstanceDef::Item(instance_def));
+        let cov_info = &body.function_coverage_info.clone().unwrap();
+        // assert!(cov_info.is_some());
+        for mapping in &cov_info.mappings {
+            if mapping.kind.terms().next().unwrap() == coverage {
+                return Some(mapping.code_region.clone());
+                // println!("hello?");
+                // Span::new()
+                // return mapping.code_region;
+            }
+        }
+        None
+        // unreachable!("coverage: {:?} - mappings: {:?}", coverage, cov_info.mappings);
+    }
+
+    fn parse_coverage(coverage_opaque: Opaque) -> CovTerm {
+        let coverage_clone = coverage_opaque.to_string();
+        let coverage_str = {
+            let coverage_fmt = format!("{coverage_clone}");
+            let cov_fmt_no_prefix = coverage_fmt.strip_prefix("Coverage { kind: ").unwrap();
+            cov_fmt_no_prefix.strip_suffix(" }").unwrap().to_string()
+        };
+        if coverage_str == "Zero" {
+            return Zero;
+        } else if let Some(rest) = coverage_str.strip_prefix("CounterIncrement(") {
+            let (num_str, rest) = rest.split_once(")").unwrap();
+                let num = num_str.parse::<u32>().unwrap();
+                CovTerm::Counter(num.into())
+        } else if let Some(rest) = coverage_str.strip_prefix("ExpressionUsed(") {
+            let (num_str, rest) = rest.split_once(")").unwrap();
+            let num = num_str.parse::<u32>().unwrap();
+            CovTerm::Expression(num.into())
+        } else { unreachable!("couldn't match `{coverage_str}`") }
+    }
+}
+
+// pub mod stable_mir {
+//     enum Coverage {
+//         Expression(ExpressionId),
+//         Counter(CoverId),
+//         Zero
+//     }
+// }

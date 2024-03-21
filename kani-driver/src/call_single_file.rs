@@ -117,7 +117,7 @@ impl KaniSession {
         if self.args.coverage {
             println!("LOL");
             flags.extend_from_slice(
-                &["-C", "instrument-coverage", "-Z", "no-profiler-runtime", "--emit=llvm-ir"].map(OsString::from),
+                &["-C", "instrument-coverage", "-Z", "no-profiler-runtime", "--emit=mir"].map(OsString::from),
             );
         }
         flags.extend_from_slice(
