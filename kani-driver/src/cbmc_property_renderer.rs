@@ -4,11 +4,15 @@
 use crate::args::OutputFormat;
 use crate::call_cbmc::{FailedProperties, VerificationStatus};
 use crate::cbmc_output_parser::{CheckStatus, ParserItem, Property, TraceItem};
+use crate::coverage::cov_results::{CoverageCheck, CoverageRegion, CoverageResults, CoverageTerm, fmt_coverage_results};
 use console::style;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use rustc_demangle::demangle;
 use std::collections::{BTreeMap, HashMap};
+use std::fs::File;
+use std::io::{BufRead, BufReader};
+use std::path::PathBuf;
 use std::sync::OnceLock;
 use strum_macros::{AsRefStr, Display};
 
@@ -150,15 +154,6 @@ static CBMC_ALT_DESCRIPTIONS: Lazy<CbmcAltDescriptions> = Lazy::new(|| {
     // map.insert("precondition_instance": vec![]);
     map
 });
-
-#[derive(PartialEq, Eq, AsRefStr, Clone, Copy, Display)]
-#[strum(serialize_all = "UPPERCASE")]
-// The status of coverage reported by Kani
-enum CoverageStatus {
-    Full,
-    Partial,
-    None,
-}
 
 const UNSUPPORTED_CONSTRUCT_DESC: &str = "is not currently supported by Kani";
 const UNWINDING_ASSERT_DESC: &str = "unwinding assertion loop";
@@ -452,68 +447,12 @@ pub fn format_coverage(
     result
 }
 
-/// Generate coverage result from all coverage properties (i.e., checks with `code_coverage` property class).
-/// Loops through each of the checks with the `code_coverage` property class on a line and gives:
-///  - A status `FULL` if all checks pertaining to a line number are `COVERED`
-///  - A status `NONE` if all checks related to a line are `UNCOVERED`
-///  - Otherwise (i.e., if the line contains both) it reports `PARTIAL`.
-///
-/// Used when the user requests coverage information with `--coverage`.
-/// Output is tested through the `coverage-based` testing suite, not the regular
-/// `expected` suite.
-fn format_result_coverage(properties: &[Property]) -> String {
-    let mut formatted_output = String::new();
-    formatted_output.push_str("\nCoverage Results:\n");
-
-    let mut coverage_results: BTreeMap<String, BTreeMap<usize, CoverageStatus>> =
-        BTreeMap::default();
-    for prop in properties {
-        let src = prop.source_location.clone();
-        let file_entries = coverage_results.entry(src.file.unwrap()).or_default();
-        let check_status = if prop.status == CheckStatus::Covered {
-            CoverageStatus::Full
-        } else {
-            CoverageStatus::None
-        };
-
-        // Create Map<file, Map<line, status>>
-        file_entries
-            .entry(src.line.unwrap().parse().unwrap())
-            .and_modify(|line_status| {
-                if *line_status != check_status {
-                    *line_status = CoverageStatus::Partial
-                }
-            })
-            .or_insert(check_status);
-    }
-
-    // Create formatted string that is returned to the user as output
-    for (file, checks) in coverage_results.iter() {
-        for (line_number, coverage_status) in checks {
-            formatted_output.push_str(&format!("{}, {}, {}\n", file, line_number, coverage_status));
-        }
-        formatted_output.push('\n');
-    }
-
-    formatted_output
-}
-
 fn format_result_new_coverage(properties: &[Property]) -> String {
     let mut formatted_output = String::new();
     formatted_output.push_str("\nCoverage Results (NEW):\n");
 
-    let coverage_results: BTreeMap<String, Vec<(usize, CheckStatus)>> =
-        BTreeMap::default();
-    
-    // let re = {
-    //     static RE: OnceLock<Regex> = OnceLock::new();
-    //     RE.get_or_init(|| {
-    //         Regex::new(
-    //             r#"^Coverage \{ kind: CounterIncrement\((?<counter_num>[0-9]+)\) \} (?<func_name>[_\d\w]+) - Span \{ id: (?<span_id>[0-9]+), repr: "(?<span>[^"]+)" \}"#,
-    //         )
-    //         .unwrap()
-    //     })
-    // };
+    let mut coverage_results: CoverageResults = BTreeMap::default();
+
     let re = {
         static RE: OnceLock<Regex> = OnceLock::new();
         RE.get_or_init(|| {
@@ -534,43 +473,47 @@ fn format_result_new_coverage(properties: &[Property]) -> String {
         })
     };
     for prop in properties {
-        println!("{prop:?}");
-        // let src = prop.source_location.clone();
-        // we expect these to always refer to a function
-        // let function = prop.source_location.function.as_ref().unwrap().clone();
         if let Some(captures) = re.captures(&prop.description) {
-            let function = demangle(&captures["func_name"]);
+            let function = demangle(&captures["func_name"]).to_string();
             let counter_num = &captures["counter_num"];
             let status = prop.status;
-            // fn split_span(span: &str) -> (&str, &str, &str) {
-            //     let span_splits: Vec<&str> = span.split(":").collect();
-            //     assert_eq!(span_splits.len(), 5);
-            //     let file = span_splits[0];
-            //     let start_row = span_splits[1];
-            //     let start_col = span_splits[2];
-            //     let end_row = span_splits[3];
-            //     let end_col = span_splits[4];
-            //     (file, start_row, start_col, end_row, end_col)
-            // }
-            let span = &captures["span"];
-            // let (file, start_row, start_col, end_row, end_col) = split_span(span);
-            let new_str = format!("### {span}({function}), counter({counter_num}), {status}\n");
+            let span = captures["span"].to_string();
 
-            formatted_output.push_str(&new_str);
+            let term = CoverageTerm::Counter(counter_num.parse().unwrap());
+            let region = CoverageRegion::from_str(span);
+            
+            let cov_check = CoverageCheck::new(function, term, region, status);
+            let file = cov_check.region.file.clone();
+
+            if coverage_results.contains_key(&file) {
+                coverage_results.entry(file).and_modify(|checks| checks.push(cov_check));
+            } else {
+                coverage_results.insert(file, vec![cov_check]);
+            }
         }
 
         if let Some(captures) = re2.captures(&prop.description) {
-            let function = demangle(&captures["func_name"]);
+            let function = demangle(&captures["func_name"]).to_string();
             let expr_num = &captures["expr_num"];
             let status = prop.status;
-            let span = &captures["span"];
-            let new_str = format!("### {span}({function}), expr({expr_num}), {status}\n");
-            formatted_output.push_str(&new_str);
+            let span = captures["span"].to_string();
+
+            let term = CoverageTerm::Expression(expr_num.parse().unwrap());
+            let region = CoverageRegion::from_str(span);
+
+            let cov_check = CoverageCheck::new(function, term, region, status);
+            let file = cov_check.region.file.clone();
+
+            if coverage_results.contains_key(&file) {
+                coverage_results.entry(file).and_modify(|checks| checks.push(cov_check));
+            } else {
+                coverage_results.insert(file, vec![cov_check]);
+            }
         }
     }
-    println!("{coverage_results:?}");
-    formatted_output
+    fmt_coverage_results(&coverage_results)
 }
+
 
 /// Attempts to build a message for a failed property with as much detailed
 /// information on the source location as possible.

@@ -100,12 +100,13 @@ impl<'tcx> GotocCtx<'tcx> {
             StatementKind::Coverage(cov) => {
                 // debug!(?opaque, "StatementKind::Coverage Opaque");
                 // self.codegen_coverage(stmt.span)
-                let fun = self.current_fn().name();
+                
+                let fun = self.current_fn().readable_name();
                 let instance = self.current_fn().instance_stable();
+                let cov_info = format!("{cov:?} {fun}");
+                println!("COVERAGE: {:?} {:?} {:?}", cov, fun, stmt.span);
                 let cov_span = coverage_opaque_span(self.tcx, cov.clone(), instance);
                 if let Some(code_region) = cov_span {
-                    let cov_info = format!("{cov:?} {fun}");
-
                 // if cov_info.starts_with("Coverage { kind: CounterIncrement(") {
                     let coverage_stmt = self.codegen_coverage(&cov_info, stmt.span, code_region);
                 // 
