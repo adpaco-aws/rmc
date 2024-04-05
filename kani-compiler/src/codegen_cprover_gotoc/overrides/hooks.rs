@@ -99,7 +99,8 @@ impl GotocHook for Assume {
         let target = target.unwrap();
         let loc = gcx.codegen_span_stable(span);
 
-        Stmt::block(vec![gcx.codegen_assume(cond, loc), Stmt::goto(bb_label(target), loc)], loc)
+        let info = "KaniAssume";
+        Stmt::block(vec![gcx.codegen_assume(cond, loc), gcx.codegen_coverage_kani(info, span), Stmt::goto(bb_label(target), loc)], loc)
     }
 }
 

@@ -70,6 +70,14 @@ impl Location {
         }
     }
 
+    pub fn pretty_loc(&self) -> Option<String> {
+        match self {
+            Location::Loc { file, function, start_line, start_col, end_line, end_col } =>
+                Some(format!("Loc ({}) {file}:{start_line}:{} - {end_line}:{}",function.unwrap(), start_col.unwrap(),end_col.unwrap())),
+            _ => None,
+        }      
+    }
+
     /// Convert a location to a short string suitable for (e.g.) logging.
     /// Goal is to return just "file:line" as clearly as possible.
     pub fn short_string(&self) -> String {

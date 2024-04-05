@@ -158,6 +158,18 @@ impl<'tcx> GotocCtx<'tcx> {
         self.codegen_assert(Expr::bool_false(), PropertyClass::CodeCoverage, &fmt, loc)
     }
 
+        /// Generate a cover statement for code coverage reports.
+    pub fn codegen_coverage_kani(&self, info: &str, span: SpanStable) -> Stmt {
+        let loc = self.codegen_caller_span_stable(span);
+        // Should use Stmt::cover, but currently this doesn't work with CBMC
+        // unless it is run with '--cover cover' (see
+        // https://github.com/diffblue/cbmc/issues/6613). So for now use
+        // `assert(false)`.
+        let fmt_loc = loc.pretty_loc().unwrap();
+        let fmt = format!("{info} - {fmt_loc}");
+        self.codegen_assert(Expr::bool_false(), PropertyClass::CodeCoverage, &fmt, loc)
+    }
+
     // The above represent the basic operations we can perform w.r.t. assert/assume/cover
     // Below are various helper functions for constructing the above more easily.
 

@@ -433,7 +433,19 @@ fn coverage_results_from_properties(properties: &[Property]) -> Option<CoverageR
             .unwrap()
         })
     };
+
+    let re3 = {
+        static RE: OnceLock<Regex> = OnceLock::new();
+        RE.get_or_init(|| {
+            Regex::new(
+                r#"^(?<check_type>[A-Za-z]+) - Loc \((?<func_name>[^)]+)\) (?<span>.+)"#,
+            )
+            .unwrap()
+        })
+    };
+
     let mut coverage_results: BTreeMap<String, Vec<CoverageCheck>> = BTreeMap::default();
+    // let mut coverage_markers = vec![];
 
     for prop in cov_properties {
         let mut prop_processed = false;
@@ -477,11 +489,41 @@ fn coverage_results_from_properties(properties: &[Property]) -> Option<CoverageR
             }
             prop_processed = true;
         }
+
+        if let Some(captures) = re3.captures(&prop.description) {
+            let function = demangle(&captures["func_name"]).to_string();
+            let check_type = captures["check_type"].to_string();
+            // let expr_num = &captures["expr_num"];
+            let status = prop.status;
+            let span = captures["span"].to_string();
+
+            println!("{check_type} {span} ({function}) {status}");
+            // let term = CoverageTerm::Expression(0);
+            let region = CoverageRegion::from_str(span);
+
+            // let cov_check = CoverageCheck::new(function, term, region, status);
+            // let file = cov_check.region.file.clone();
+
+            // if coverage_results.contains_key(&file) {
+            //     coverage_results.entry(file).and_modify(|checks| checks.push(cov_check));
+            // } else {
+            //     coverage_results.insert(file, vec![cov_check]);
+            // }
+            prop_processed = true;
+        }
+        assert!(prop_processed, "error: couldn't process coverage check `{prop:?}`");
+        process_kani_markers
     }
+
 
     Some(CoverageResults::new(coverage_results))
 
 }
+
+struct KaniTerm {
+    region: CoverageRegion,
+}
+
 /// Solve Unwind Value from conflicting inputs of unwind values. (--default-unwind, annotation-unwind, --unwind)
 pub fn resolve_unwind_value(
     args: &VerificationArgs,
