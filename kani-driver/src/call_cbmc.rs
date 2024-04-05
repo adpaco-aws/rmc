@@ -418,7 +418,7 @@ fn coverage_results_from_properties(properties: &[Property]) -> Option<CoverageR
         static RE: OnceLock<Regex> = OnceLock::new();
         RE.get_or_init(|| {
             Regex::new(
-                r#"^Coverage \{ kind: CounterIncrement\((?<counter_num>[0-9]+)\) \} (?<func_name>[_\d\w]+) - (?<span>.+)"#,
+                r#"^Coverage \{ kind: CounterIncrement\((?<counter_num>[0-9]+)\) \} \((?<func_name>[^)]+)\) - (?<span>.+)"#,
             )
             .unwrap()
         })
@@ -428,7 +428,7 @@ fn coverage_results_from_properties(properties: &[Property]) -> Option<CoverageR
         static RE: OnceLock<Regex> = OnceLock::new();
         RE.get_or_init(|| {
             Regex::new(
-                r#"^Coverage \{ kind: ExpressionUsed\((?<expr_num>[0-9]+)\) \} (?<func_name>[_\d\w]+) - (?<span>.+)"#,
+                r#"^Coverage \{ kind: ExpressionUsed\((?<expr_num>[0-9]+)\) \} \((?<func_name>[^)]+)\) - (?<span>.+)"#,
             )
             .unwrap()
         })
@@ -436,6 +436,8 @@ fn coverage_results_from_properties(properties: &[Property]) -> Option<CoverageR
     let mut coverage_results: BTreeMap<String, Vec<CoverageCheck>> = BTreeMap::default();
 
     for prop in cov_properties {
+        let mut prop_processed = false;
+
         if let Some(captures) = re.captures(&prop.description) {
             let function = demangle(&captures["func_name"]).to_string();
             let counter_num = &captures["counter_num"];
@@ -453,6 +455,7 @@ fn coverage_results_from_properties(properties: &[Property]) -> Option<CoverageR
             } else {
                 coverage_results.insert(file, vec![cov_check]);
             }
+            prop_processed = true;
         }
 
         if let Some(captures) = re2.captures(&prop.description) {
@@ -472,6 +475,7 @@ fn coverage_results_from_properties(properties: &[Property]) -> Option<CoverageR
             } else {
                 coverage_results.insert(file, vec![cov_check]);
             }
+            prop_processed = true;
         }
     }
 
