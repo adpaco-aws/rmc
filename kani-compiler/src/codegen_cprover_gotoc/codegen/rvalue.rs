@@ -675,6 +675,14 @@ impl<'tcx> GotocCtx<'tcx> {
                 )
             }
             AggregateKind::Coroutine(_, _, _) => self.codegen_rvalue_coroutine(&operands, res_ty),
+            AggregateKind::RawPtr(inner_ty, _) => {
+                // We expect two operands: "data" and "meta"
+                assert!(operands.len() == 2);
+                let data = self.codegen_operand_stable(&operands[0]);
+                let _meta = self.codegen_operand_stable(&operands[1]);
+                // Return pointer to data?
+                data.cast_to(self.codegen_ty_stable(inner_ty).to_pointer())
+            }
         }
     }
 
