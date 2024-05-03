@@ -26,6 +26,7 @@ use stable_mir::mir::{
     AggregateKind, BinOp, CastKind, NullOp, Operand, Place, PointerCoercion, Rvalue, UnOp,
 };
 use stable_mir::ty::{ClosureKind, Const, IntTy, RigidTy, Size, Ty, TyKind, UintTy, VariantIdx};
+use std::any::Any;
 use std::collections::BTreeMap;
 use tracing::{debug, trace, warn};
 
@@ -673,15 +674,25 @@ impl<'tcx> GotocCtx<'tcx> {
                         .collect(),
                     &self.symbol_table,
                 )
+                
             }
             AggregateKind::Coroutine(_, _, _) => self.codegen_rvalue_coroutine(&operands, res_ty),
             AggregateKind::RawPtr(inner_ty, _) => {
                 // We expect two operands: "data" and "meta"
                 assert!(operands.len() == 2);
-                let data = self.codegen_operand_stable(&operands[0]);
-                let _meta = self.codegen_operand_stable(&operands[1]);
-                // Return pointer to data?
-                data.cast_to(self.codegen_ty_stable(inner_ty).to_pointer())
+                let typ = self.codegen_ty_stable(res_ty);
+                let inner_typ = self.codegen_ty_stable(inner_ty);
+                let layout = self.layout_of_stable(res_ty);
+                // assert!(layout.fields[0)
+                Expr::struct_expr_from_values(
+                    typ.clone(),
+                    layout
+                        .fields
+                        .index_by_increasing_offset()
+                        .map(|idx| if idx == 0 { self.codegen_operand_stable(&operands[idx]).cast_to(inner_typ.clone()) } else {self.codegen_operand_stable(&operands[idx])})
+                        .collect(),
+                    &self.symbol_table,
+                )
             }
         }
     }
